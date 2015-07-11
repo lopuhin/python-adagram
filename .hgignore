@@ -3,5 +3,6 @@ syntax: glob
 *.sw[po]
 *~
 .*.swp
+*.egg-info
 env
 numpy

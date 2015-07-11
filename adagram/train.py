@@ -23,8 +23,8 @@ arg('--epochs', help='number of epochs to train', type=int, default=1)
 args = parser.parse_args()
 
 
-from adagram import VectorModel, Dictionary
-from gradient import inplace_train
+from adagram.model import VectorModel, Dictionary
+from adagram.gradient import inplace_train
 
 
 print('Building dictionary... ')

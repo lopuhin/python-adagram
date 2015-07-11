@@ -4,13 +4,13 @@ import time
 
 import numpy as np
 
-from stick_breaking import expected_logpi as var_init_z
+from adagram.stick_breaking import expected_logpi as var_init_z
 
 
 def inplace_train(vm, dictionary, train_filename, window_length,
         batch_size=64000, start_lr=0.025, context_cut=True, epochs=1,
         sense_treshold=1e-32):
-
+    # FIXME - epochs
     total_words = float(dictionary.frequencies.sum())
     total_ll = [0.0, 0.0]
     vm.counts[0,:] = vm.frequencies
