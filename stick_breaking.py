@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import numpy as np
 
 
@@ -44,4 +45,7 @@ def digamma(x):
     return result
 
 
-
+try:
+    from scipy.special import digamma
+except ImportError:
+    pass

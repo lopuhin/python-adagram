@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import random
 import time
 
@@ -23,7 +23,7 @@ def inplace_train(vm, dictionary, train_filename, window_length,
 
 
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
-        total_ll, context_cut, sense_treshold):
+        total_ll, context_cut, sense_treshold, report_batch_size=10000):
     in_grad = np.zeros((vm.dim, vm.prototypes), dtype=np.float32)
     out_grad = np.zeros(vm.dim, dtype=np.float32)
     z = np.zeros(vm.prototypes, dtype=np.float64)
@@ -59,11 +59,12 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         #variational update for q(pi_v)
         _var_update_counts(vm, w, z, lr)
 
-        if i and i % 10000 == 0:
+        if i and i % report_batch_size == 0:
             t1 = time.time()
             print('{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'\
                 .format(words_read / total_words, total_ll[0] / total_ll[1],
-                        lr, senses / i, max_senses, t1 - t0))
+                        lr, senses / i, max_senses,
+                        report_batch_size / 1000 / (t1 - t0)))
             t0 = t1
 
 
@@ -95,9 +96,8 @@ def _words_reader(dictionary, train_filename, batch_size):
                 doc[idx] = w_id
                 idx += 1
                 if idx == batch_size:
-                    words_read += idx
                     yield words_read, doc
+                    words_read += idx
                     idx = 0
-        words_read += idx
         yield words_read, doc[:idx]
 
