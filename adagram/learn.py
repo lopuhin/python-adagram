@@ -108,9 +108,10 @@ void update_z(float* In, float* Out,
         }
     }
 }
-""")
+""", libraries=['m'])
 
-types = {
+
+TYPES = {
     np.dtype('float32'): 'float',
     np.dtype('float64'): 'double',
     np.dtype('int8'): 'int8_t',
@@ -120,10 +121,10 @@ types = {
 try:
     import __pypy__
 except ImportError:
-    _np_cast = lambda x: ffi.cast(types[x.dtype] + ' *', x.ctypes.data)
+    _np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 else:
     _np_cast = lambda x: ffi.cast(
-        types[x.dtype] + ' *', x.data._pypy_raw_address())
+        TYPES[x.dtype] + ' *', x.data._pypy_raw_address())
 
 
 def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
