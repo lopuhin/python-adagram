@@ -53,13 +53,11 @@ class VectorModel(object):
 	self.path = np.zeros((max_length, N), dtype=np.int32)
 	self.code = np.zeros((max_length, N), dtype=np.int8)
 
-       #for n in 1:N
-       #	code[:, n] = -1
-       #	for i in 1:length(outputs[n])
-       #		code[i, n] = outputs[n].code[i]
-       #		path[i, n] = outputs[n].path[i]
-       #	end
-       #end
+        for n, output in enumerate(outputs):
+            self.code[:, n] = -1
+            for i, (c, p) in enumerate(zip(output.code, output.path)):
+                self.code[i, n] = c
+                self.path[i, n] = p
 
         self.In = rand_arr((dim, prototypes, N), dim)
         self.Out = rand_arr((dim, N), dim)
