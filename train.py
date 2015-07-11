@@ -15,16 +15,24 @@ arg('--dim', help='dimensionality of representations', type=int, default=100)
 arg('--prototypes', help='number of word prototypes', type=int, default=5)
 arg('--alpha', help='prior probability of allocating a new prototype',
     type=float, default=0.1)
+arg('--context-cut', help='randomly reduce size of the context',
+    action='store_true')
+arg('--epochs', help='number of epochs to train', type=int, default=1)
+
 
 args = parser.parse_args()
 
 
 from adagram import VectorModel, Dictionary
+from gradient import inplace_train
 
 
 print('Building dictionary... ')
 dictionary = Dictionary.read(args.dict, min_freq=args.min_freq)
 print('Done! {} words.'.format(len(dictionary)))
 
-model = VectorModel(freqs=dictionary.freqs,
+vm = VectorModel(frequencies=dictionary.frequencies,
     dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
+
+inplace_train(vm, dictionary, args.train, args.window,
+    context_cut=args.context_cut, epochs=args.epochs)
