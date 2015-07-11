@@ -2,9 +2,12 @@ import heapq
 
 
 class HierarchicalSoftmaxNode(object):
-    def __init__(self, parent=0, branch=False):
+    def __init__(self, parent=-1, branch=False):
         self.parent = parent
         self.branch = branch
+
+    def is_root(self):
+        return self.parent == -1
 
     def __repr__(self):
         return '<HierarchicalSoftmaxNode {} {}>'.format(
@@ -23,7 +26,7 @@ class HierarchicalOutput(object):
 def softmax_path(nodes, N, idx):
     while True:
         node = nodes[idx]
-        if not node.parent:
+        if node.is_root():
             break
         assert node.parent >= N
         yield node.parent - N, node.branch
@@ -62,4 +65,3 @@ def convert_huffman_tree(nodes, N):
             path.append(n)
         outputs.append(HierarchicalOutput(code, path))
     return outputs
-
