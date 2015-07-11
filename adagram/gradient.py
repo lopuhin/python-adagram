@@ -5,6 +5,7 @@ import time
 import numpy as np
 
 from adagram.stick_breaking import expected_logpi as var_init_z
+from adagram.learn import var_update_z, inplace_update
 
 
 def inplace_train(vm, dictionary, train_filename, window_length,
@@ -45,13 +46,13 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         context = [doc[j] for j in xrange(
             max(0, i - window), min(len(doc), i + window + 1)) if i != j]
         for _w in context:
-            _var_update_z(vm, w, _w, z)
+            var_update_z(vm, w, _w, z)
         np.subtract(z, z.max(), out=z)
         np.exp(z, out=z)
         np.divide(z, z.sum(), out=z)
 
         for _w in context:
-            total_ll[0] += _inplace_update(
+            total_ll[0] += inplace_update(
                 vm, w, _w, z, lr, in_grad, out_grad, sense_treshold)
         total_ll[1] += len(context)
         words_read += 1
@@ -73,14 +74,6 @@ def _var_update_counts(vm, w, z, lr):
     freq = vm.frequencies[w]
     for k in xrange(vm.prototypes):
         counts[k] += lr * (z[k] * freq - counts[k])
-
-
-def _var_update_z(vm, w, _w, z):
-    pass # TODO
-
-
-def _inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
-    return 1.0 # TODO
 
 
 def _words_reader(dictionary, train_filename, batch_size):

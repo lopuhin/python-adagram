@@ -58,10 +58,11 @@ class VectorModel(object):
                 self.code[i, n] = c
                 self.path[i, n] = p
 
-        self.In = rand_arr((dim, prototypes, N), dim)
-        self.Out = rand_arr((dim, N), dim)
+        self.In = rand_arr((dim, prototypes, N), dim, np.float32)
+        self.Out = rand_arr((dim, N), dim, np.float32)
         self.counts = np.zeros((prototypes, N), np.float32)
 
 
-def rand_arr(shape, inv_norm):
-    return (np.random.rand(*shape) - 0.5) / inv_norm
+def rand_arr(shape, inv_norm, dtype):
+    return (np.array(np.random.rand(*shape), dtype=dtype) - 0.5) / \
+            float(inv_norm)
