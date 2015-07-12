@@ -9,13 +9,13 @@ ffi = cffi.FFI()
 ffi.cdef("""
 float inplace_update(float* In, float* Out,
     int M, int T, double* z,
-    int x,
+    int x, int y,
     int32_t* path, int8_t* code, int64_t length,
     float* in_grad, float* out_grad,
     float lr, float sense_threshold);
 void update_z(float* In, float* Out,
     int M, int T, double* z,
-    int x,
+    int x, int y,
     int32_t* path, int8_t* code, int64_t length);
 double digamma(double x);
 """)
@@ -40,12 +40,14 @@ float logsigmoid(float x) {
 
 float inplace_update(float* In, float* Out,
     int M, int T, double* z,
-    int x,
+    int x, int y,
     int32_t* path, int8_t* code, int64_t length,
     float* in_grad, float* out_grad,
     float lr, float sense_threshold) {
 
     float pr = 0;
+    path += y * length;
+    code += y * length;
 
     for (int k = 0; k < T; ++k)
         for (int i = 0; i < M; ++i)
@@ -94,8 +96,11 @@ float inplace_update(float* In, float* Out,
 
 void update_z(float* In, float* Out,
     int M, int T, double* z,
-    int x,
+    int x, int y,
     int32_t* path, int8_t* code, int64_t length) {
+
+    path += y * length;
+    code += y * length;
 
     for (int n = 0; n < length && code[n] != -1; ++n) {
         float* out = Out + path[n]*M;
@@ -143,26 +148,21 @@ else:
     np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 
 
-def inplace_update(vm, In, Out, w, _w, z, lr, in_grad, out_grad, sense_threshold):
-    # TODO - do not cast here, use w to calculate offset in C
-    path = np_cast(vm.path[_w, :])
-    code = np_cast(vm.code[_w, :])
+def inplace_update(vm, In, Out, w, _w, path, code, z, lr,
+        in_grad, out_grad, sense_threshold):
     return superlib.inplace_update(
         In, Out,
         vm.dim, vm.prototypes, z,
-        w,
+        w, _w,
         path, code, vm.code.shape[1],
         in_grad, out_grad,
         lr, sense_threshold)
 
 
-def var_update_z(vm, In, Out, w, _w, z):
-    # TODO - do not cast here, use w to calculate offset in C
-    path = np_cast(vm.path[_w, :])
-    code = np_cast(vm.code[_w, :])
+def update_z(vm, In, Out, w, _w, path, code, z):
     superlib.update_z(
         In, Out,
-        vm.dim, vm.prototypes, z, w,
+        vm.dim, vm.prototypes, z, w, _w,
         path, code, vm.path.shape[1])
 
 
