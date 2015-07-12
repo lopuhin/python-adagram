@@ -25,6 +25,24 @@ def expected_logpi(vm, pi, w, min_prob=1e-3):
     return senses
 
 
+def expected_pi(vm, w, min_prob=1e-3):
+    pi = np.zeros(vm.prototypes)
+    r = 1.
+   #senses = 0
+    ts = vm.counts[: , w].sum()
+    for k in xrange(vm.prototypes - 1):
+        ts = max(ts - vm.counts[k, w], 0.)
+        a, b = 1. + vm.counts[k, w] - vm.d, vm.alpha + k*vm.d + ts
+        pi[k] = mean_beta(a, b) * r
+   #    if pi[k] >= min_prob:
+   #        senses += 1
+        r = max(r - pi[k], 0.)
+    pi[-1] = r
+   #if r >= min_prob:
+   #    senses += 1
+    return pi
+
+
 mean_beta = lambda a, b: a / (a + b)
 meanlog_beta = lambda a, b: digamma(a) - digamma(a + b)
 

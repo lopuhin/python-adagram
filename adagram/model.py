@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import sys
 
 import numpy as np
+import pickle
 
 from softmax import build_huffman_tree, convert_huffman_tree
 
@@ -58,10 +59,20 @@ class VectorModel(object):
                 self.code[n, i] = c
                 self.path[n, i] = p
 
-        self.In = rand_arr((dim, prototypes, N), 1. / dim, np.float32)
-        self.Out = rand_arr((dim, N), 1. / dim, np.float32)
+        self.In = _rand_arr((dim, prototypes, N), 1. / dim, np.float32)
+        self.Out = _rand_arr((dim, N), 1. / dim, np.float32)
         self.counts = np.zeros((prototypes, N), np.float32)
 
 
-def rand_arr(shape, norm, dtype):
+def save_model(output, vm, dictionary):
+    with open(output, 'wb') as f:
+        pickle.dump((vm, dictionary), f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def load_model(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
+
+def _rand_arr(shape, norm, dtype):
     return (np.array(np.random.rand(*shape), dtype=dtype) - 0.5) * norm

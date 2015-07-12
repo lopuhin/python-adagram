@@ -19,11 +19,10 @@ arg('--context-cut', help='randomly reduce size of the context',
     action='store_true')
 arg('--epochs', help='number of epochs to train', type=int, default=1)
 
-
 args = parser.parse_args()
 
 
-from adagram.model import VectorModel, Dictionary
+from adagram.model import VectorModel, Dictionary, save_model
 from adagram.gradient import inplace_train
 
 
@@ -36,3 +35,5 @@ vm = VectorModel(frequencies=dictionary.frequencies,
 
 inplace_train(vm, dictionary, args.train, args.window,
     context_cut=args.context_cut, epochs=args.epochs)
+
+save_model(args.output, vm, dictionary)
