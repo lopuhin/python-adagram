@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import numpy as np
 
 
+# TODO - move to C
 def expected_logpi(vm, pi, w, min_prob=1e-3):
     r = 0.
     x = 1.

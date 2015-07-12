@@ -146,6 +146,7 @@ else:
 
 def inplace_update(vm, In, Out, w, _w, z, lr, in_grad, out_grad, sense_threshold):
     _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    # TODO - do not cast here, use w to calculate offset in C
     path = np_cast(vm.path[_w])
     code = np_cast(vm.code[_w])
     return superlib.inplace_update(
@@ -159,6 +160,7 @@ def inplace_update(vm, In, Out, w, _w, z, lr, in_grad, out_grad, sense_threshold
 
 def var_update_z(vm, In, Out, w, _w, z):
     _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    # TODO - do not cast here, use w to calculate offset in C
     path = np_cast(vm.path[_w])
     code = np_cast(vm.code[_w])
     superlib.update_z(
