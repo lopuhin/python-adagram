@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import cffi
 
 import numpy as np
@@ -128,7 +129,7 @@ else:
 
 
 def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
-    _w = int(w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
     return superlib.inplace_update(
         _np_cast(vm.In), _np_cast(vm.Out),
         vm.dim, vm.prototypes, _np_cast(z),
@@ -139,7 +140,7 @@ def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
 
 
 def var_update_z(vm, w, _w, z):
-    _w = int(w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
     superlib.update_z(
         _np_cast(vm.In), _np_cast(vm.Out),
         vm.dim, vm.prototypes, _np_cast(z), w,
