@@ -49,20 +49,19 @@ class VectorModel(object):
         outputs = convert_huffman_tree(nodes, N)
 
         max_length = max(len(x.code) for x in outputs)
-        self.path = np.zeros((max_length, N), dtype=np.int32)
-        self.code = np.zeros((max_length, N), dtype=np.int8)
+        self.path = np.zeros((N, max_length), dtype=np.int32)
+        self.code = np.zeros((N, max_length), dtype=np.int8)
 
         for n, output in enumerate(outputs):
-            self.code[:, n] = -1
+            self.code[n] = -1
             for i, (c, p) in enumerate(zip(output.code, output.path)):
-                self.code[i, n] = c
-                self.path[i, n] = p
+                self.code[n, i] = c
+                self.path[n, i] = p
 
-        self.In = rand_arr((dim, prototypes, N), dim, np.float32)
-        self.Out = rand_arr((dim, N), dim, np.float32)
+        self.In = rand_arr((dim, prototypes, N), 1. / dim, np.float32)
+        self.Out = rand_arr((dim, N), 1. / dim, np.float32)
         self.counts = np.zeros((prototypes, N), np.float32)
 
 
-def rand_arr(shape, inv_norm, dtype):
-    return (np.array(np.random.rand(*shape), dtype=dtype) - 0.5) / \
-            float(inv_norm)
+def rand_arr(shape, norm, dtype):
+    return (np.array(np.random.rand(*shape), dtype=dtype) - 0.5) * norm

@@ -128,20 +128,22 @@ else:
 
 
 def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
+    _w = int(w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
     return superlib.inplace_update(
         _np_cast(vm.In), _np_cast(vm.Out),
         vm.dim, vm.prototypes, _np_cast(z),
         w,
-        _np_cast(vm.path[:, _w]), _np_cast(vm.code[:, _w]), vm.code.shape[0],
+        _np_cast(vm.path[_w]), _np_cast(vm.code[_w]), vm.code.shape[1],
         _np_cast(in_grad), _np_cast(out_grad),
         lr, sense_treshold)
 
 
 def var_update_z(vm, w, _w, z):
+    _w = int(w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
     superlib.update_z(
         _np_cast(vm.In), _np_cast(vm.Out),
         vm.dim, vm.prototypes, _np_cast(z), w,
-        _np_cast(vm.path[:, _w]), _np_cast(vm.code[:, _w]), vm.path.shape[0])
+        _np_cast(vm.path[_w]), _np_cast(vm.code[_w]), vm.path.shape[1])
 
 
 
