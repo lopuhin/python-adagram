@@ -10,14 +10,14 @@ ffi = cffi.FFI()
 ffi.cdef("""
 float inplace_update(float* In, float* Out,
     int M, int T, double* z,
-    int x, int y,
-    int32_t* path, int8_t* code, int64_t length,
+    int32_t x, int32_t* context, int context_length,
+    int32_t* paths, int8_t* codes, int64_t length,
     float* in_grad, float* out_grad,
     float lr, float sense_threshold);
 void update_z(float* In, float* Out,
     int M, int T, double* z,
-    int x, int y,
-    int32_t* path, int8_t* code, int64_t length);
+    int32_t x, int32_t* context, int64_t context_length,
+    int32_t* paths, int8_t* codes, int64_t length);
 double digamma(double x);
 """)
 
@@ -39,23 +39,7 @@ else:
     np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 
 
-def inplace_update(vm, In, Out, w, _w, path, code, z, lr,
-        in_grad, out_grad, sense_threshold):
-    return superlib.inplace_update(
-        In, Out,
-        vm.dim, vm.prototypes, z,
-        w, _w,
-        path, code, vm.code.shape[1],
-        in_grad, out_grad,
-        lr, sense_threshold)
-
-
-def update_z(vm, In, Out, w, _w, path, code, z):
-    superlib.update_z(
-        In, Out,
-        vm.dim, vm.prototypes, z, w, _w,
-        path, code, vm.path.shape[1])
-
-
 digamma = superlib.digamma
+inplace_update = superlib.inplace_update
+update_z = superlib.update_z
 
