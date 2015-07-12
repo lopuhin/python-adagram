@@ -22,7 +22,10 @@ double digamma(double x);
 """)
 
 with open(os.path.join(os.path.dirname(__file__), 'learn.c'), 'rb') as f:
-    superlib = ffi.verify(f.read(), libraries=['m'])
+    superlib = ffi.verify(
+        f.read(),
+        libraries=['m'],
+        extra_compile_args=['-march=native', '-O3', '-ffast-math'])
 
 
 TYPES = {
