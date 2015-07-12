@@ -4,8 +4,7 @@ import time
 
 import numpy as np
 
-from adagram.stick_breaking import expected_logpi as var_init_z
-from adagram.learn import update_z, inplace_update, np_cast
+from adagram.learn import update_z, inplace_update, np_cast, init_z
 from adagram.utils import statprofile
 
 
@@ -25,10 +24,12 @@ def inplace_train(vm, dictionary, train_filename, window_length,
 
 
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
-        total_ll, context_cut, sense_threshold, report_batch_size=10000):
+        total_ll, context_cut, sense_threshold,
+        report_batch_size=10000, min_sense_prob=1e-3):
     in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
     out_grad = np.zeros(vm.dim, dtype=np.float32)
     z = np.zeros(vm.prototypes, dtype=np.float64)
+    context = np.zeros(2 * window_length, dtype=np.int32)
     senses = 0.
     max_senses = 0.
     min_lr = start_lr * 1e-4
@@ -40,31 +41,36 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
     out_grad_ptr = np_cast(out_grad)
     path_ptr = np_cast(vm.path)
     code_ptr = np_cast(vm.code)
+    context_ptr = np_cast(context)
     for i, w in enumerate(doc):
         lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
         window = window_length
         if context_cut:
             window -= random.randint(1, window_length - 1)
 
-        z[:] = 0.
-
-        n_senses = var_init_z(vm, z, w)
+        z[:] = vm.counts[w, :]
+        n_senses = init_z(
+            z_ptr, vm.prototypes, vm.alpha, vm.d,
+            min_sense_prob)
         senses += n_senses
         max_senses = max(max_senses, n_senses)
-        context = [doc[j] for j in xrange(
-            max(0, i - window), min(len(doc), i + window + 1)) if i != j]
-        for _w in context:
-            update_z(vm, In_ptr, Out_ptr, w, _w, path_ptr, code_ptr, z_ptr)
-        np.subtract(z, z.max(), out=z)
-        np.exp(z, out=z)
-        np.divide(z, z.sum(), out=z)
+        c_len = 0
+        for j in xrange(max(0, i - window), min(len(doc), i + window + 1)):
+            if i != j:
+                context[c_len] = doc[j]
+                c_len += 1
+        update_z(In_ptr, Out_ptr,
+                 vm.dim, vm.prototypes, z_ptr,
+                 w, context_ptr, c_len,
+                 path_ptr, code_ptr, vm.path.shape[1])
 
-        # TODO - maybe move loop to C?
-        for _w in context:
-            ll = inplace_update(
-                vm, In_ptr, Out_ptr, w, _w, path_ptr, code_ptr, z_ptr, lr,
-                in_grad_ptr, out_grad_ptr, sense_threshold)
-            total_ll[0] += ll
+        total_ll[0] += inplace_update(
+            In_ptr, Out_ptr,
+            vm.dim, vm.prototypes, z_ptr,
+            w, context_ptr, c_len,
+            path_ptr, code_ptr, vm.code.shape[1],
+            in_grad_ptr, out_grad_ptr,
+            lr, sense_threshold)
         total_ll[1] += len(context)
         words_read += 1
 
