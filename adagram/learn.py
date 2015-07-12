@@ -35,7 +35,6 @@ float logsigmoid(float x) {
 #define in_offset(In, x, k, M, T) (In) + (x)*(M)*(T) + (k)*(M)
 
 
-//assuming everything is indexed from 1 like in julia
 float inplace_update(float* In, float* Out,
     int M, int T, double* z,
     int x,
