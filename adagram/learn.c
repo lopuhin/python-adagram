@@ -26,7 +26,7 @@ float inplace_update(float* In, float* Out,
     int32_t y;
     int8_t* code;
     int32_t* path;
-    for (int ci = 0; ci < context_length; ci++) {
+    for (int ci = 0; ci < context_length; ++ci) {
         y = context[ci];
         path = paths + y * length;
         code = codes + y * length;
@@ -85,7 +85,7 @@ void update_z(float* In, float* Out,
     int32_t y;
     int8_t* code;
     int32_t* path;
-    for (int ci = 0; ci < context_length; ci++) {
+    for (int ci = 0; ci < context_length; ++ci) {
         y = context[ci];
         path = paths + y * length;
         code = codes + y * length;
@@ -136,11 +136,11 @@ double init_z(double* pi, int T, double alpha, double d, float min_prob) {
     int k;
 
     double ts = 0.;
-    for (k = 0; k < T; k++) {
+    for (k = 0; k < T; ++k) {
         ts += pi[k];
     }
 
-    for (int k = 0; k < T - 1; k++) {
+    for (int k = 0; k < T - 1; ++k) {
         ts = fmax(ts - pi[k], 0.);
         a = 1. + pi[k] - d;
         b = alpha + k*d + ts;
