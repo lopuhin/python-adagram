@@ -15,7 +15,7 @@ def inplace_train(vm, dictionary, train_filename, window_length,
     # FIXME - epochs
     total_words = float(dictionary.frequencies.sum())
     total_ll = [0.0, 0.0]
-    vm.counts[0,:] = vm.frequencies
+    vm.counts[:,0] = vm.frequencies
     for words_read, doc in _words_reader(
             dictionary, train_filename, batch_size):
         print('{:>8.2%}'.format(words_read / total_words))
@@ -26,7 +26,7 @@ def inplace_train(vm, dictionary, train_filename, window_length,
 
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         total_ll, context_cut, sense_threshold, report_batch_size=10000):
-    in_grad = np.zeros((vm.dim, vm.prototypes), dtype=np.float32)
+    in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
     out_grad = np.zeros(vm.dim, dtype=np.float32)
     z = np.zeros(vm.prototypes, dtype=np.float64)
     senses = 0.
@@ -78,7 +78,7 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
 
 
 def _var_update_counts(vm, w, z, lr):
-    counts = vm.counts[:, w]
+    counts = vm.counts[w, :]
     freq = vm.frequencies[w]
     for k in xrange(vm.prototypes):
         counts[k] += lr * (z[k] * freq - counts[k])

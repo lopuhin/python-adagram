@@ -60,9 +60,9 @@ class VectorModel(object):
                 self.code[n, i] = c
                 self.path[n, i] = p
 
-        self.In = rand_arr((dim, prototypes, N), 1. / dim, np.float32)
-        self.Out = rand_arr((dim, N), 1. / dim, np.float32)
-        self.counts = np.zeros((prototypes, N), np.float32)
+        self.In = rand_arr((N, prototypes, dim), 1. / dim, np.float32)
+        self.Out = rand_arr((N, dim), 1. / dim, np.float32)
+        self.counts = np.zeros((N, prototypes), np.float32)
 
 
 def save_model(output, vm, dictionary):
