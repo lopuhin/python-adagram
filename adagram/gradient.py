@@ -24,7 +24,6 @@ def inplace_train(vm, dictionary, train_filename, window_length,
             context_cut=context_cut, sense_threshold=sense_threshold)
 
 
-@statprofile
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         total_ll, context_cut, sense_threshold, report_batch_size=10000):
     in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
