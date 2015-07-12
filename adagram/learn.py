@@ -1,6 +1,7 @@
 from __future__ import print_function, division
-import cffi
+import sys
 
+import cffi
 import numpy as np
 
 
@@ -135,13 +136,11 @@ TYPES = {
     np.dtype('int32'): 'int32_t',
     }
 
-try:
-    import __pypy__
-except ImportError:
-    np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
-else:
+if '__pypy__' in sys.modules:
     np_cast = lambda x: ffi.cast(
         TYPES[x.dtype] + ' *', x.data._pypy_raw_address())
+else:
+    np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 
 
 def inplace_update(vm, In, Out, w, _w, z, lr, in_grad, out_grad, sense_threshold):
