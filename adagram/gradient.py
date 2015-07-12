@@ -63,9 +63,6 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
                  vm.dim, vm.prototypes, z_ptr,
                  w, context_ptr, c_len,
                  path_ptr, code_ptr, vm.path.shape[1])
-        np.subtract(z, z.max(), out=z)
-        np.exp(z, out=z)
-        np.divide(z, z.sum(), out=z)
 
         total_ll[0] += inplace_update(
             In_ptr, Out_ptr,

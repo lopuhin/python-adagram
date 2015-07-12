@@ -104,6 +104,23 @@ void update_z(float* In, float* Out,
             }
         }
     }
+
+    double z_max = z[0], z_k;
+    for (int k = 1; k < T; ++k) {
+        z_k = z[k];
+        if (z_k > z_max) {
+            z_max = z_k;
+        }
+    }
+    double z_sum = 0.;
+    for (int k = 0; k < T; ++k) {
+        z_k = exp(z[k] - z_max);
+        z[k] = z_k;
+        z_sum += z_k;
+    }
+    for (int k = 0; k < T; ++k) {
+        z[k] /= z_sum;
+    }
 }
 
 
