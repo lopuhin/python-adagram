@@ -1,8 +1,9 @@
 from __future__ import print_function, division
 import sys
+import pickle
 
 import numpy as np
-import pickle
+from numpy.linalg import norm
 
 from adagram.softmax import build_huffman_tree, convert_huffman_tree
 from adagram.utils import rand_arr
@@ -64,6 +65,13 @@ class VectorModel(object):
         self.Out = rand_arr((N, dim), 1. / dim, np.float32)
         self.counts = np.zeros((N, prototypes), np.float32)
 
+    def normalize(self):
+        self.InNorm = np.zeros(self.In.shape, dtype=self.In.dtype)
+        for w_id in xrange(self.n_words):
+            for s in xrange(self.prototypes):
+                v = self.In[w_id, s]
+                self.InNorm[w_id, s] = v / norm(v)
+
 
 def save_model(output, vm, dictionary):
     with open(output, 'wb') as f:
@@ -72,4 +80,6 @@ def save_model(output, vm, dictionary):
 
 def load_model(filename):
     with open(filename, 'rb') as f:
-        return pickle.load(f)
+        vm, d = pickle.load(f)
+        vm.normalize()
+        return vm, d
