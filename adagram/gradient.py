@@ -10,7 +10,7 @@ from adagram.learn import var_update_z, inplace_update
 
 def inplace_train(vm, dictionary, train_filename, window_length,
         batch_size=64000, start_lr=0.025, context_cut=True, epochs=1,
-        sense_treshold=1e-32):
+        sense_threshold=1e-32):
     # FIXME - epochs
     total_words = float(dictionary.frequencies.sum())
     total_ll = [0.0, 0.0]
@@ -20,11 +20,11 @@ def inplace_train(vm, dictionary, train_filename, window_length,
         print('{:>8.2%}'.format(words_read / total_words))
         _inplace_train(
             vm, doc, window_length, start_lr, total_words, words_read, total_ll,
-            context_cut=context_cut, sense_treshold=sense_treshold)
+            context_cut=context_cut, sense_threshold=sense_threshold)
 
 
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
-        total_ll, context_cut, sense_treshold, report_batch_size=10000):
+        total_ll, context_cut, sense_threshold, report_batch_size=10000):
     in_grad = np.zeros((vm.dim, vm.prototypes), dtype=np.float32)
     out_grad = np.zeros(vm.dim, dtype=np.float32)
     z = np.zeros(vm.prototypes, dtype=np.float64)
@@ -52,8 +52,9 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         np.divide(z, z.sum(), out=z)
 
         for _w in context:
-            total_ll[0] += inplace_update(
-                vm, w, _w, z, lr, in_grad, out_grad, sense_treshold)
+            ll = inplace_update(
+                vm, w, _w, z, lr, in_grad, out_grad, sense_threshold)
+            total_ll[0] += ll
         total_ll[1] += len(context)
         words_read += 1
 

@@ -11,7 +11,7 @@ float inplace_update(float* In, float* Out,
     int x,
     int32_t* path, int8_t* code, int64_t length,
     float* in_grad, float* out_grad,
-    float lr, float sense_treshold);
+    float lr, float sense_threshold);
 void update_z(float* In, float* Out,
     int M, int T, double* z,
     int x,
@@ -41,7 +41,7 @@ float inplace_update(float* In, float* Out,
     int x,
     int32_t* path, int8_t* code, int64_t length,
     float* in_grad, float* out_grad,
-    float lr, float sense_treshold) {
+    float lr, float sense_threshold) {
 
     float pr = 0;
 
@@ -56,7 +56,7 @@ float inplace_update(float* In, float* Out,
             out_grad[i] = 0;
 
         for (int k = 0; k < T; ++k) {
-            if (z[k] < sense_treshold) continue;
+            if (z[k] < sense_threshold) continue;
 
             float* in = in_offset(In, x, k, M, T);
 
@@ -80,7 +80,7 @@ float inplace_update(float* In, float* Out,
     }
 
     for (int k = 0; k < T; ++k) {
-        if (z[k] < sense_treshold) continue;
+        if (z[k] < sense_threshold) continue;
         float* in = in_offset(In, x, k, M, T);
         for (int i = 0; i < M; ++i)
             in[i] += in_grad[k*M + i];
@@ -128,7 +128,7 @@ else:
         TYPES[x.dtype] + ' *', x.data._pypy_raw_address())
 
 
-def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
+def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_threshold):
     _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
     return superlib.inplace_update(
         _np_cast(vm.In), _np_cast(vm.Out),
@@ -136,7 +136,7 @@ def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_treshold):
         w,
         _np_cast(vm.path[_w]), _np_cast(vm.code[_w]), vm.code.shape[1],
         _np_cast(in_grad), _np_cast(out_grad),
-        lr, sense_treshold)
+        lr, sense_threshold)
 
 
 def var_update_z(vm, w, _w, z):
