@@ -4,8 +4,7 @@ import time
 
 import numpy as np
 
-from adagram.stick_breaking import expected_logpi as var_init_z
-from adagram.learn import update_z, inplace_update, np_cast
+from adagram.learn import update_z, inplace_update, np_cast, init_z
 from adagram.utils import statprofile
 
 
@@ -25,7 +24,8 @@ def inplace_train(vm, dictionary, train_filename, window_length,
 
 
 def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
-        total_ll, context_cut, sense_threshold, report_batch_size=10000):
+        total_ll, context_cut, sense_threshold,
+        report_batch_size=10000, min_sense_prob=1e-3):
     in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
     out_grad = np.zeros(vm.dim, dtype=np.float32)
     z = np.zeros(vm.prototypes, dtype=np.float64)
@@ -48,9 +48,10 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         if context_cut:
             window -= random.randint(1, window_length - 1)
 
-        z[:] = 0.
-
-        n_senses = var_init_z(vm, z, w)
+        z[:] = vm.counts[w, :]
+        n_senses = init_z(
+            z_ptr, vm.prototypes, vm.alpha, vm.d,
+            min_sense_prob)
         senses += n_senses
         max_senses = max(max_senses, n_senses)
         c_len = 0
