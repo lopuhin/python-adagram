@@ -47,23 +47,7 @@ mean_beta = lambda a, b: a / (a + b)
 meanlog_beta = lambda a, b: digamma(a) - digamma(a + b)
 
 
-def digamma(x):
-    # see http://web.science.mq.edu.au/~mjohnson/code/digamma.c
-    result = 0.
-    assert x > 0
-    while x < 7:
-        result -= 1/x
-        x += 1
-    x -= 1.0/2.0
-    xx = 1.0/x
-    xx2 = xx*xx
-    xx4 = xx2*xx2
-    result += np.log(x)+(1./24.)*xx2-(7.0/960.0)*xx4+(31.0/8064.0)*xx4*xx2-\
-              (127.0/30720.0)*xx4*xx4
-    return result
-
-
 try:
     from scipy.special import digamma
 except ImportError:
-    pass
+    from adagram.learn import digamma

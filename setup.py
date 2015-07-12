@@ -9,5 +9,8 @@ setup(name='adagram',
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+          'statprof==0.1.2',
+          'cffi>=1.0',
+          'numpy==1.9', # PyPy: git+https://bitbucket.org/pypy/numpy.git
       ],
 )

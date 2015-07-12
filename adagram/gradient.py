@@ -5,7 +5,8 @@ import time
 import numpy as np
 
 from adagram.stick_breaking import expected_logpi as var_init_z
-from adagram.learn import var_update_z, inplace_update
+from adagram.learn import var_update_z, inplace_update, np_cast
+from adagram.utils import statprofile
 
 
 def inplace_train(vm, dictionary, train_filename, window_length,
@@ -32,6 +33,11 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
     max_senses = 0.
     min_lr = start_lr * 1e-4
     t0 = time.time()
+    In_ptr = np_cast(vm.In)
+    Out_ptr = np_cast(vm.Out)
+    z_ptr = np_cast(z)
+    in_grad_ptr = np_cast(in_grad)
+    out_grad_ptr = np_cast(out_grad)
     for i, w in enumerate(doc):
         lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
         window = window_length
@@ -46,14 +52,15 @@ def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
         context = [doc[j] for j in xrange(
             max(0, i - window), min(len(doc), i + window + 1)) if i != j]
         for _w in context:
-            var_update_z(vm, w, _w, z)
+            var_update_z(vm, In_ptr, Out_ptr, w, _w, z_ptr)
         np.subtract(z, z.max(), out=z)
         np.exp(z, out=z)
         np.divide(z, z.sum(), out=z)
 
         for _w in context:
             ll = inplace_update(
-                vm, w, _w, z, lr, in_grad, out_grad, sense_threshold)
+                vm, In_ptr, Out_ptr, w, _w, z_ptr, lr,
+                in_grad_ptr, out_grad_ptr, sense_threshold)
             total_ll[0] += ll
         total_ll[1] += len(context)
         words_read += 1

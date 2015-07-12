@@ -16,6 +16,7 @@ void update_z(float* In, float* Out,
     int M, int T, double* z,
     int x,
     int32_t* path, int8_t* code, int64_t length);
+double digamma(double x);
 """)
 
 superlib = ffi.verify("""
@@ -23,6 +24,7 @@ superlib = ffi.verify("""
 #include <math.h>
 #include <stdint.h>
 #include <float.h>
+#include <assert.h>
 
 float sigmoid(float x) {
     return 1 / (1 + exp(-x));
@@ -108,6 +110,21 @@ void update_z(float* In, float* Out,
         }
     }
 }
+
+
+double digamma(double x) {
+    double result = 0, xx, xx2, xx4;
+    assert(x > 0);
+    for ( ; x < 7; ++x)
+        result -= 1/x;
+    x -= 1.0/2.0;
+    xx = 1.0/x;
+    xx2 = xx*xx;
+    xx4 = xx2*xx2;
+    result += log(x)+(1./24.)*xx2-(7.0/960.0)*xx4+(31.0/8064.0)*xx4*xx2-(127.0/30720.0)*xx4*xx4;
+    return result;
+}
+
 """, libraries=['m'])
 
 
@@ -121,29 +138,34 @@ TYPES = {
 try:
     import __pypy__
 except ImportError:
-    _np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
+    np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 else:
-    _np_cast = lambda x: ffi.cast(
+    np_cast = lambda x: ffi.cast(
         TYPES[x.dtype] + ' *', x.data._pypy_raw_address())
 
 
-def inplace_update(vm, w, _w, z, lr, in_grad, out_grad, sense_threshold):
+def inplace_update(vm, In, Out, w, _w, z, lr, in_grad, out_grad, sense_threshold):
     _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    path = np_cast(vm.path[_w])
+    code = np_cast(vm.code[_w])
     return superlib.inplace_update(
-        _np_cast(vm.In), _np_cast(vm.Out),
-        vm.dim, vm.prototypes, _np_cast(z),
+        In, Out,
+        vm.dim, vm.prototypes, z,
         w,
-        _np_cast(vm.path[_w]), _np_cast(vm.code[_w]), vm.code.shape[1],
-        _np_cast(in_grad), _np_cast(out_grad),
+        path, code, vm.code.shape[1],
+        in_grad, out_grad,
         lr, sense_threshold)
 
 
-def var_update_z(vm, w, _w, z):
+def var_update_z(vm, In, Out, w, _w, z):
     _w = int(_w)  # https://bitbucket.org/pypy/numpy/issues/36/2d-nparray-does-not-allow-indexing-by
+    path = np_cast(vm.path[_w])
+    code = np_cast(vm.code[_w])
     superlib.update_z(
-        _np_cast(vm.In), _np_cast(vm.Out),
-        vm.dim, vm.prototypes, _np_cast(z), w,
-        _np_cast(vm.path[_w]), _np_cast(vm.code[_w]), vm.path.shape[1])
+        In, Out,
+        vm.dim, vm.prototypes, z, w,
+        path, code, vm.path.shape[1])
 
 
+digamma = superlib.digamma
 
