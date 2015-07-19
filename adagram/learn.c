@@ -175,3 +175,16 @@ double init_z(double* pi, int T, double alpha, double d, float min_prob) {
         senses += 1;
     return senses;
 }
+
+
+void learn(int32_t* doc, int doc_length, float start_lr, float min_lr,
+        int words_read, int total_words, int window_length) {
+    float lr;
+    for (int doc_idx = 0; doc_idx < doc_length; ++doc_idx) {
+        lr = fmaxf(start_lr * (1 - words_read / (total_words + 1)), min_lr);
+        words_read += 1;
+
+        
+    }
+
+}
