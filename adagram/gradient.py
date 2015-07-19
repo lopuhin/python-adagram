@@ -1,29 +1,53 @@
 from __future__ import print_function, division
 import random
 import time
+import threading
+from Queue import Queue
 
 import numpy as np
 
 from adagram.learn import update_z, inplace_update, np_cast, init_z
-from adagram.utils import statprofile
 
 
 def inplace_train(vm, dictionary, train_filename, window_length,
         batch_size=64000, start_lr=0.025, context_cut=True, epochs=1,
-        sense_threshold=1e-32):
+        sense_threshold=1e-32, n_workers=1):
     # FIXME - epochs
+    n_workers = 2  # FIXME
     total_words = float(dictionary.frequencies.sum())
-    total_ll = [0.0, 0.0]
+    total_ll = [0.0, 0.0]  # FIXME - wrongly shared
     vm.counts[:,0] = vm.frequencies
-    for words_read, doc in _words_reader(
-            dictionary, train_filename, batch_size):
-        print('{:>8.2%}'.format(words_read / total_words))
-        _inplace_train(
-            vm, doc, window_length, start_lr, total_words, words_read, total_ll,
-            context_cut=context_cut, sense_threshold=sense_threshold)
+    queque = Queue(maxsize=2 * n_workers)
+    workers = [
+        threading.Thread(
+            target=worker,
+            args=(queque, total_words, vm, window_length,
+                  start_lr, total_ll),
+            kwargs=dict(context_cut=context_cut,
+                        sense_threshold=sense_threshold))
+        for _ in xrange(n_workers)]
+    for w in workers:
+        w.daemon = True
+        w.start()
+    for item in _words_reader(dictionary, train_filename, batch_size):
+        queque.put(item)
+    for _ in workers:
+        queque.put(None)
+    for w in workers:
+        w.join()
 
 
-def _inplace_train(vm, doc, window_length, start_lr, total_words, words_read,
+def worker(queue, *args, **kwargs):
+    item = queue.get()
+    while item is not None:
+        words_read, doc = item
+        #print('{} {:>8.2%}'.format(n, words_read / total_words))
+        _inplace_train(doc, words_read, *args, **kwargs)
+        item = queue.get()
+
+
+#from adagram.utils import statprofile
+def _inplace_train(doc, words_read, total_words, vm, window_length, start_lr,
         total_ll, context_cut, sense_threshold,
         report_batch_size=10000, min_sense_prob=1e-3):
     in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
