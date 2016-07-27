@@ -5,7 +5,6 @@ import time
 import numpy as np
 
 from adagram.learn import update_z, inplace_update, np_cast, init_z
-from adagram.utils import statprofile
 
 
 def inplace_train(vm, dictionary, train_filename, window_length,

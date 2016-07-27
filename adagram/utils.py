@@ -2,7 +2,6 @@ from __future__ import print_function, division
 from functools import wraps
 
 import numpy as np
-import statprof
 
 
 def rand_arr(shape, norm, dtype):
@@ -10,6 +9,7 @@ def rand_arr(shape, norm, dtype):
 
 
 def statprofile(fn):
+    import statprof
     @wraps(fn)
     def inner(*args, **kwargs):
         statprof.reset(frequency=1000)
