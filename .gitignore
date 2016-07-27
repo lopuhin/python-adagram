@@ -1,9 +1,5 @@
-syntax: glob
 *.py[co]
 *.sw[po]
 *~
-.*.swp
 *.egg-info
-env
-numpy
 __pycache__
