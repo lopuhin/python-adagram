@@ -1,4 +1,5 @@
-from __future__ import print_function, division
+from __future__ import absolute_import, division, print_function
+from six.moves import xrange as range
 import heapq
 
 
@@ -58,7 +59,7 @@ def build_huffman_tree(freqs):
 
 def convert_huffman_tree(nodes, N):
     outputs = []
-    for idx in xrange(N):
+    for idx in range(N):
         code = []
         path = []
         for n, branch in softmax_path(nodes, N, idx):

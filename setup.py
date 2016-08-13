@@ -11,5 +11,11 @@ setup(name='adagram',
       install_requires=[
           'cffi>=1.0',
           'numpy>=1.9',
+          'six',
       ],
+      entry_points={
+          'console_scripts': [
+              'adagram-train = adagram.train:main',
+          ]
+      },
 )

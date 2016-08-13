@@ -1,12 +1,13 @@
-from __future__ import print_function, division
-import sys
+from __future__ import absolute_import, division, print_function
+import codecs
 import pickle
+from six.moves import xrange as range
 
 import numpy as np
 from numpy.linalg import norm
 
-from adagram.softmax import build_huffman_tree, convert_huffman_tree
-from adagram.utils import rand_arr
+from .softmax import build_huffman_tree, convert_huffman_tree
+from .utils import rand_arr
 
 
 class Dictionary(object):
@@ -17,23 +18,24 @@ class Dictionary(object):
         self.word2id = {w: id_ for id_, w in enumerate(self.id2word)}
 
     @classmethod
-    def read(cls, filename, min_freq):
+    def read(cls, filename, min_freq, encoding='utf8'):
         words_freqs = []
-        with open(filename, 'rb') as f:
+        with codecs.open(filename, 'rt', encoding=encoding) as f:
             for n, line in enumerate(f, 1):
-                line = line.decode('utf-8').strip()
+                line = line.strip()
                 try:
                     word, freq = line.split()
                     freq = int(freq)
                 except ValueError:
-                    print >>sys.stderr, \
-                        u'Expected "word freq" pair on line {}, got "{}"'\
-                        .format(n, line)
-                    sys.exit(1)
+                    raise ValueError(
+                        u'Expected "word freq" pair on line {}, got "{}"'
+                        .format(n, line))
                 if freq >= min_freq:
                     words_freqs.append((word, freq))
-        words_freqs.sort(key=lambda (w, f): f, reverse=True)
-        return cls([f for _, f in words_freqs], [w for w, _ in words_freqs])
+        words_freqs.sort(key=lambda x: x[1], reverse=True)
+        return cls(
+            frequencies=[f for _, f in words_freqs],
+            id2word=[w for w, _ in words_freqs])
 
     def __len__(self):
         return len(self.id2word)
@@ -64,11 +66,12 @@ class VectorModel(object):
         self.In = rand_arr((N, prototypes, dim), 1. / dim, np.float32)
         self.Out = rand_arr((N, dim), 1. / dim, np.float32)
         self.counts = np.zeros((N, prototypes), np.float32)
+        self.InNorm = None
 
     def normalize(self):
         self.InNorm = np.zeros(self.In.shape, dtype=self.In.dtype)
-        for w_id in xrange(self.n_words):
-            for s in xrange(self.prototypes):
+        for w_id in range(self.n_words):
+            for s in range(self.prototypes):
                 v = self.In[w_id, s]
                 self.InNorm[w_id, s] = v / norm(v)
 
