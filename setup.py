@@ -10,6 +10,7 @@ setup(name='adagram',
       include_package_data=True,
       install_requires=[
           'cffi>=1.0',
+          'joblib',
           'numpy>=1.9',
           'six',
       ],

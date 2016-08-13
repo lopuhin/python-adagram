@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division, print_function
 import codecs
 from collections import Counter
-import pickle
 import six
 from six.moves import xrange as range
 
+import joblib
 import numpy as np
 from numpy.linalg import norm
 
@@ -108,13 +108,10 @@ class VectorModel(object):
 
     @classmethod
     def load(cls, input):
-        with open(input, 'rb') as f:
-            return pickle.load(f)
+        return joblib.load(input)
 
     def save(self, output):
-        # TODO - use joblib
-        with open(output, 'wb') as f:
-            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+        joblib.dump(self, output)
 
     def normalize(self):
         self.InNorm = np.zeros(self.In.shape, dtype=self.In.dtype)
