@@ -23,7 +23,7 @@ double init_z(double* pi, int T, double alpha, double d, float min_prob);
 
 with open(os.path.join(os.path.dirname(__file__), 'learn.c'), 'rb') as f:
     superlib = ffi.verify(
-        f.read(),
+        f.read().decode('utf8'),
         libraries=['m'],
         extra_compile_args=['-march=native', '-O3', '-ffast-math'])
 

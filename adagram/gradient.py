@@ -100,7 +100,7 @@ def _words_reader(dictionary, train_filename, batch_size, encoding):
     idx = 0
     words_read = 0
     doc = np.zeros(batch_size, dtype=np.int32)
-    with codecs.open(train_filename, 'rt', encoding=encoding) as f:
+    with codecs.open(train_filename, 'r', encoding=encoding) as f:
         for line in f:
             line = line.strip()
             for w in line.split():

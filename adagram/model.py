@@ -41,7 +41,7 @@ class Dictionary(object):
 
     @classmethod
     def build(cls, filename, min_freq, encoding='utf8'):
-        with codecs.open(filename, 'rt', encoding=encoding) as f:
+        with codecs.open(filename, 'r', encoding=encoding) as f:
             word_freqs = Counter(w for line in f for w in line.split())
         return cls([(w, f) for w, f in six.iteritems(word_freqs)
                     if f >= min_freq])

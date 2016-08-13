@@ -15,6 +15,9 @@ class HierarchicalSoftmaxNode(object):
         return '<HierarchicalSoftmaxNode {} {}>'.format(
             self.parent, self.branch)
 
+    def __gt__(self, other):
+        return id(self) < id(other)
+
 
 class HierarchicalOutput(object):
     def __init__(self, code, path):
@@ -37,7 +40,7 @@ def softmax_path(nodes, N, idx):
 
 def build_huffman_tree(freqs):
     nodes = [HierarchicalSoftmaxNode() for _ in freqs]
-    heap = zip(freqs, nodes)
+    heap = list(zip(freqs, nodes))
     heapq.heapify(heap)
 
     def pop_initialize(parent, branch):
