@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 import argparse
 import logging
-logging.basicConfig(level=logging.INFO)
 
 from .model import VectorModel, Dictionary
 
@@ -25,6 +24,9 @@ def main():
 
     args = parser.parse_args()
 
+    logging.basicConfig(
+        format='[%(levelname)s] %(asctime)s %(message)s',
+        level=logging.INFO)
     if args.dict:
         logging.info('Reading dictionary...')
         dictionary = Dictionary.read(args.dict, min_freq=args.min_freq)
