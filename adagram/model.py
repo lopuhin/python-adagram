@@ -1,20 +1,23 @@
 from __future__ import absolute_import, division, print_function
 import codecs
+from collections import Counter
 import pickle
+import six
 from six.moves import xrange as range
 
 import numpy as np
 from numpy.linalg import norm
 
+from .gradient import inplace_train
 from .softmax import build_huffman_tree, convert_huffman_tree
 from .utils import rand_arr
 
 
 class Dictionary(object):
-    def __init__(self, frequencies, id2word):
-        assert len(frequencies) == len(id2word)
-        self.frequencies = np.array(frequencies, dtype=np.int64)
-        self.id2word = id2word
+    def __init__(self, word_freqs):
+        words_freqs = sorted(word_freqs, key=lambda x: x[1], reverse=True)
+        self.frequencies = np.array([f for _, f in words_freqs], dtype=np.int64)
+        self.id2word = [w for w, _ in words_freqs]
         self.word2id = {w: id_ for id_, w in enumerate(self.id2word)}
 
     @classmethod
@@ -32,25 +35,30 @@ class Dictionary(object):
                         .format(n, line))
                 if freq >= min_freq:
                     words_freqs.append((word, freq))
-        words_freqs.sort(key=lambda x: x[1], reverse=True)
-        return cls(
-            frequencies=[f for _, f in words_freqs],
-            id2word=[w for w, _ in words_freqs])
+        return cls(words_freqs)
+
+    @classmethod
+    def build(cls, filename, min_freq, encoding='utf8'):
+        with codecs.open(filename, 'rt', encoding=encoding) as f:
+            word_freqs = Counter(w for line in f for w in line.split())
+        return cls([(w, f) for w, f in six.iteritems(word_freqs)
+                    if f >= min_freq])
 
     def __len__(self):
         return len(self.id2word)
 
 
 class VectorModel(object):
-    def __init__(self, frequencies, dim, prototypes, alpha):
+    def __init__(self, dictionary, dim, prototypes, alpha):
         self.alpha = alpha
         self.d = 0.
-        self.frequencies = frequencies
+        self.dictionary = dictionary
+        self.frequencies = dictionary.frequencies
         self.prototypes = prototypes
         self.dim = dim
         self.n_words = N = len(self.frequencies)
 
-        nodes = build_huffman_tree(frequencies)
+        nodes = build_huffman_tree(self.frequencies)
         outputs = convert_huffman_tree(nodes, N)
 
         max_length = max(len(x.code) for x in outputs)
@@ -68,21 +76,24 @@ class VectorModel(object):
         self.counts = np.zeros((N, prototypes), np.float32)
         self.InNorm = None
 
+    def train(self, input, window, context_cut=False, epochs=1):
+        inplace_train(self, input, window,
+                      context_cut=context_cut, epochs=epochs)
+        self.normalize()
+
+    @classmethod
+    def load(cls, input):
+        with open(input, 'rb') as f:
+            return pickle.load(f)
+
+    def save(self, output):
+        # TODO - use joblib
+        with open(output, 'wb') as f:
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
+
     def normalize(self):
         self.InNorm = np.zeros(self.In.shape, dtype=self.In.dtype)
         for w_id in range(self.n_words):
             for s in range(self.prototypes):
                 v = self.In[w_id, s]
                 self.InNorm[w_id, s] = v / norm(v)
-
-
-def save_model(output, vm, dictionary):
-    with open(output, 'wb') as f:
-        pickle.dump((vm, dictionary), f, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def load_model(filename):
-    with open(filename, 'rb') as f:
-        vm, d = pickle.load(f)
-        vm.normalize()
-        return vm, d

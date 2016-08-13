@@ -2,17 +2,17 @@
 from __future__ import absolute_import, division, print_function
 import argparse
 import logging
+logging.basicConfig(level=logging.INFO)
 
-from .model import VectorModel, Dictionary, save_model
-from .gradient import inplace_train
+from .model import VectorModel, Dictionary
 
 
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('train', help='training text data')
-    arg('dict', help='dictionary file with word frequencies')
+    arg('input', help='training text data')
     arg('output', help='file to save the model')
+    arg('--dict', help='dictionary file with word frequencies')
     arg('--window', help='(max) window size', type=int, default=4)
     arg('--min-freq', help='min. frequency of the word', type=int, default=20)
     arg('--dim', help='dimensionality of representations', type=int, default=100)
@@ -23,17 +23,18 @@ def main():
         action='store_true')
     arg('--epochs', help='number of epochs to train', type=int, default=1)
 
-    # TODO - configure logging
     args = parser.parse_args()
 
-    logging.info('Building dictionary... ')
-    dictionary = Dictionary.read(args.dict, min_freq=args.min_freq)
+    if args.dict:
+        logging.info('Reading dictionary...')
+        dictionary = Dictionary.read(args.dict, min_freq=args.min_freq)
+    else:
+        logging.info('Building dictionary...')
+        dictionary = Dictionary.build(args.input, min_freq=args.min_freq)
     logging.info('Done! {} words.'.format(len(dictionary)))
 
-    vm = VectorModel(frequencies=dictionary.frequencies,
+    vm = VectorModel(dictionary=dictionary,
         dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
-
-    inplace_train(vm, dictionary, args.train, args.window,
+    vm.train(args.input, args.window,
         context_cut=args.context_cut, epochs=args.epochs)
-
-    save_model(args.output, vm, dictionary)
+    vm.save(args.output)

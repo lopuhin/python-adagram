@@ -10,15 +10,15 @@ import numpy as np
 from .learn import update_z, inplace_update, np_cast, init_z
 
 
-def inplace_train(vm, dictionary, train_filename, window_length,
+def inplace_train(vm, train_filename, window_length,
         batch_size=64000, start_lr=0.025, context_cut=True, epochs=1,
         sense_threshold=1e-32, encoding='utf8'):
     assert epochs == 1 # TODO - epochs
-    total_words = float(dictionary.frequencies.sum())
+    total_words = float(vm.frequencies.sum())
     total_ll = [0.0, 0.0]
     vm.counts[:,0] = vm.frequencies
     for words_read, doc in _words_reader(
-            dictionary, train_filename, batch_size, encoding):
+            vm.dictionary, train_filename, batch_size, encoding):
         logging.info('{:>8.2%}'.format(words_read / total_words))
         _inplace_train(
             vm, doc, window_length, start_lr, total_words, words_read, total_ll,

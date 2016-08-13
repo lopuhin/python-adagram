@@ -11,3 +11,27 @@ at http://arxiv.org/abs/1502.07257.
 but it lacks multithreading, tests and also maybe disambiguation.
 If you have a more mature implementation or want to help,
 please get in touch.
+
+Install
+-------
+
+::
+
+    pip install python-adagram
+
+
+Usage
+-----
+
+Train a model from command line::
+
+    adagram-train tokenized.txt out.pkl
+
+Input corpus must be already tokenized, with tokens (usually words)
+separated by spaces.
+
+Load model::
+
+    import adagram
+    vm = adagram.VectorModel.load('out.pkl')
+
