@@ -9,7 +9,9 @@ import numpy as np
 from numpy.linalg import norm
 
 from .gradient import inplace_train
+from .infer import nearest_neighbors
 from .softmax import build_huffman_tree, convert_huffman_tree
+from .stick_breaking import expected_pi
 from .utils import rand_arr
 
 
@@ -77,9 +79,32 @@ class VectorModel(object):
         self.InNorm = None
 
     def train(self, input, window, context_cut=False, epochs=1):
+        """ Train model.
+        :arg input: is a path to tokenized text corpus
+        :arg window: is window (or half-context) size
+        :arg context_cut: randomly reduce context size to speed up training
+        :arg epochs: number of iterations across input
+        """
+        # TODO - input should be a words iterator
         inplace_train(self, input, window,
                       context_cut=context_cut, epochs=epochs)
         self.normalize()
+
+    def sense_neighbors(self, word, sense, max_neighbours=10, min_count=1):
+        """ Nearest neighbours of given sense of the word.
+        :arg word: word (a string)
+        :arg sense: integer sense id (starting from 0)
+        :arg max_neighbours: max number of neighbours returned
+        :arg min_count: min count of returned neighbours
+        :return: A list of triples (word, sense, closeness)
+        """
+        return nearest_neighbors(self, word, sense, max_neighbours, min_count)
+
+    def sense_probs(self, word, min_prob=1.e-3):
+        """ A list of sense probabilities for given word.
+        """
+        return [p for p in expected_pi(self, self.dictionary.word2id[word])
+                if p >= min_prob]
 
     @classmethod
     def load(cls, input):

@@ -10,13 +10,13 @@ from .model import VectorModel, Dictionary
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
-    arg('input', help='training text data')
-    arg('output', help='file to save the model')
+    arg('input', help='training text data (tokenized)')
+    arg('output', help='output file to save the model')
     arg('--dict', help='dictionary file with word frequencies')
-    arg('--window', help='(max) window size', type=int, default=4)
-    arg('--min-freq', help='min. frequency of the word', type=int, default=20)
+    arg('--window', help='window (or half-context) size', type=int, default=4)
+    arg('--min-freq', help='min. frequency of words', type=int, default=10)
     arg('--dim', help='dimensionality of representations', type=int, default=100)
-    arg('--prototypes', help='number of word prototypes', type=int, default=5)
+    arg('--prototypes', help='max. number of word prototypes', type=int, default=5)
     arg('--alpha', help='prior probability of allocating a new prototype',
         type=float, default=0.1)
     arg('--context-cut', help='randomly reduce size of the context',
