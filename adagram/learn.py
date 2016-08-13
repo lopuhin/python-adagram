@@ -35,12 +35,8 @@ TYPES = {
     np.dtype('int32'): 'int32_t',
     }
 
-if '__pypy__' in sys.modules:
-    # TODO - review if we still need that branch on modern pypy
-    np_cast = lambda x: ffi.cast(
-        TYPES[x.dtype] + ' *', x.data._pypy_raw_address())
-else:
-    np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
+
+np_cast = lambda x: ffi.cast(TYPES[x.dtype] + ' *', x.ctypes.data)
 
 
 init_z = superlib.init_z
