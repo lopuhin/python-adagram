@@ -39,32 +39,17 @@ def inplace_train(
         float min_sense_prob=1e-3):
 
     cdef np.ndarray[np.float32_t, ndim=3] In = vm.In
-    cdef float* In_ptr = &In[0,0,0]
-
     cdef np.ndarray[np.float32_t, ndim=2] Out = vm.Out
-    cdef float* Out_ptr = &Out[0,0]
-
     cdef np.ndarray[np.int32_t, ndim=2] path = vm.path
-    cdef int32_t* path_ptr = &path[0,0]
-
     cdef np.ndarray[np.int8_t, ndim=2] code = vm.code
-    cdef int8_t* code_ptr = &code[0,0]
 
     cdef np.ndarray[np.float32_t, ndim=2] counts = vm.counts
     cdef np.ndarray[np.int64_t, ndim=1] frequencies = vm.frequencies
-
     cdef np.ndarray[np.float32_t, ndim=2] in_grad = \
         np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
-    cdef float* in_grad_ptr = &in_grad[0,0]
-
     cdef np.ndarray[np.float32_t, ndim=1] out_grad = np.zeros(vm.dim, dtype=np.float32)
-    cdef float* out_grad_ptr = &out_grad[0]
-
     cdef np.ndarray[np.float64_t, ndim=1] z = np.zeros(vm.prototypes, dtype=np.float64)
-    cdef double* z_ptr = &z[0]
-
     cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
-    cdef int32_t* context_ptr = &context[0]
 
     t0 = time.time()
 
@@ -97,7 +82,7 @@ def inplace_train(
         for k in range(vm_prototypes):
             z[k] = counts[w, k]
         n_senses = init_z(
-            z_ptr, vm_prototypes, vm_alpha, vm_d,
+            &z[0], vm_prototypes, vm_alpha, vm_d,
             min_sense_prob)
         senses += n_senses
         max_senses = max(max_senses, n_senses)
@@ -106,17 +91,17 @@ def inplace_train(
             if i != j:
                 context[c_len] = doc[j]
                 c_len += 1
-        update_z(In_ptr, Out_ptr,
-                 vm_dim, vm_prototypes, z_ptr,
-                 w, context_ptr, c_len,
-                 path_ptr, code_ptr, path_length)
+        update_z(&In[0,0,0], &Out[0,0],
+                 vm_dim, vm_prototypes, &z[0],
+                 w, &context[0], c_len,
+                 &path[0,0], &code[0,0], path_length)
 
         total_ll[0] += inplace_update(
-            In_ptr, Out_ptr,
-            vm_dim, vm_prototypes, z_ptr,
-            w, context_ptr, c_len,
-            path_ptr, code_ptr, code_length,
-            in_grad_ptr, out_grad_ptr,
+            &In[0,0,0], &Out[0,0],
+            vm_dim, vm_prototypes, &z[0],
+            w, &context[0], c_len,
+            &path[0,0], &code[0,0], code_length,
+            &in_grad[0,0], &out_grad[0],
             lr, sense_threshold)
         total_ll[1] += c_len
         words_read += 1
