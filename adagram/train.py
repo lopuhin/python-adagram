@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, print_function
 import argparse
 import logging
 
+import numpy as np
+
 from .model import VectorModel, Dictionary
 
 
@@ -23,6 +25,7 @@ def main():
     arg('--epochs', help='number of epochs to train', type=int, default=1)
 
     args = parser.parse_args()
+    np.random.seed(42)
 
     logging.basicConfig(
         format='[%(levelname)s] %(asctime)s %(message)s',
@@ -39,4 +42,5 @@ def main():
         dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
     vm.train(args.input, args.window,
         context_cut=args.context_cut, epochs=args.epochs)
+    print(vm.InNorm[100])
     vm.save(args.output)
