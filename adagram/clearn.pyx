@@ -1,3 +1,4 @@
+#cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
 import time
 import logging
 
@@ -81,6 +82,8 @@ def inplace_train(
     cdef int vm_dim = vm.dim
     cdef size_t path_length = vm.path.shape[1]
     cdef size_t code_length = vm.code.shape[1]
+    cdef int32_t w;
+    cdef float frequencies_w
 
     for i in range(doc_len):
         w = doc[i]
@@ -88,9 +91,11 @@ def inplace_train(
         lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
         window = window_length
         if context_cut:
+            # TODO - cython optimize
             window -= np.random.randint(1, window_length)
 
-        z[:] = counts[w, :]
+        for k in range(vm_prototypes):
+            z[k] = counts[w, k]
         n_senses = init_z(
             z_ptr, vm_prototypes, vm_alpha, vm_d,
             min_sense_prob)
@@ -113,14 +118,13 @@ def inplace_train(
             path_ptr, code_ptr, code_length,
             in_grad_ptr, out_grad_ptr,
             lr, sense_threshold)
-        total_ll[1] += len(context)
+        total_ll[1] += c_len
         words_read += 1
 
         # variational update for q(pi_v)
-        counts_w = counts[w, :]
         frequencies_w = frequencies[w]
-        for k in range(vm.prototypes):
-            counts_w[k] += lr * (z[k] * frequencies_w - counts_w[k])
+        for k in range(vm_prototypes):
+            counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
 
         if i and i % report_batch_size == 0:
             t1 = time.time()
