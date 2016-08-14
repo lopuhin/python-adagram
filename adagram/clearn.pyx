@@ -14,15 +14,15 @@ cdef extern from 'learn.c':
         int32_t x, int32_t* context, int context_length,
         int32_t* paths, int8_t* codes, int64_t length,
         float* in_grad, float* out_grad,
-        float lr, float sense_threshold)
+        float lr, float sense_threshold) nogil
 
     void update_z(
         float* In, float* Out,
         int M, int T, double* z,
         int32_t x, int32_t* context, int64_t context_length,
-        int32_t* paths, int8_t* codes, int64_t length)
+        int32_t* paths, int8_t* codes, int64_t length) nogil
 
-    double init_z(double* pi, int T, double alpha, double d, float min_prob)
+    double init_z(double* pi, int T, double alpha, double d, float min_prob) nogil
 
 
 def inplace_train(
@@ -70,52 +70,55 @@ def inplace_train(
     cdef int32_t w;
     cdef float frequencies_w
 
-    for i in range(doc_len):
-        w = doc[i]
+    with nogil:
+        for i in range(doc_len):
+            w = doc[i]
 
-        lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
-        window = window_length
-        if context_cut:
-            # TODO - cython optimize
-            window -= np.random.randint(1, window_length)
+            lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
+            window = window_length
+            if context_cut:
+                with gil:
+                    # TODO - cython optimize
+                    window -= np.random.randint(1, window_length)
 
-        for k in range(vm_prototypes):
-            z[k] = counts[w, k]
-        n_senses = init_z(
-            &z[0], vm_prototypes, vm_alpha, vm_d,
-            min_sense_prob)
-        senses += n_senses
-        max_senses = max(max_senses, n_senses)
-        c_len = 0
-        for j in range(max(0, i - window), min(doc_len, i + window + 1)):
-            if i != j:
-                context[c_len] = doc[j]
-                c_len += 1
-        update_z(&In[0,0,0], &Out[0,0],
-                 vm_dim, vm_prototypes, &z[0],
-                 w, &context[0], c_len,
-                 &path[0,0], &code[0,0], path_length)
+            for k in range(vm_prototypes):
+                z[k] = counts[w, k]
+            n_senses = init_z(
+                &z[0], vm_prototypes, vm_alpha, vm_d,
+                min_sense_prob)
+            senses += n_senses
+            max_senses = max(max_senses, n_senses)
+            c_len = 0
+            for j in range(max(0, i - window), min(doc_len, i + window + 1)):
+                if i != j:
+                    context[c_len] = doc[j]
+                    c_len += 1
+            update_z(&In[0,0,0], &Out[0,0],
+                     vm_dim, vm_prototypes, &z[0],
+                     w, &context[0], c_len,
+                     &path[0,0], &code[0,0], path_length)
 
-        total_ll[0] += inplace_update(
-            &In[0,0,0], &Out[0,0],
-            vm_dim, vm_prototypes, &z[0],
-            w, &context[0], c_len,
-            &path[0,0], &code[0,0], code_length,
-            &in_grad[0,0], &out_grad[0],
-            lr, sense_threshold)
-        total_ll[1] += c_len
-        words_read += 1
+            total_ll[0] += inplace_update(
+                &In[0,0,0], &Out[0,0],
+                vm_dim, vm_prototypes, &z[0],
+                w, &context[0], c_len,
+                &path[0,0], &code[0,0], code_length,
+                &in_grad[0,0], &out_grad[0],
+                lr, sense_threshold)
+            total_ll[1] += c_len
+            words_read += 1
 
-        # variational update for q(pi_v)
-        frequencies_w = frequencies[w]
-        for k in range(vm_prototypes):
-            counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
+            # variational update for q(pi_v)
+            frequencies_w = frequencies[w]
+            for k in range(vm_prototypes):
+                counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
 
-        if i and i % report_batch_size == 0:
-            t1 = time.time()
-            logging.info(
-                '{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'
-                .format(words_read / total_words, total_ll[0] / total_ll[1],
-                        lr, senses / i, max_senses,
-                        report_batch_size / 1000 / (t1 - t0)))
-            t0 = t1
+            if i and i % report_batch_size == 0:
+                with gil:
+                    t1 = time.time()
+                    logging.info(
+                        '{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'
+                        .format(words_read / total_words, total_ll[0] / total_ll[1],
+                                lr, senses / i, max_senses,
+                                report_batch_size / 1000 / (t1 - t0)))
+                    t0 = t1
