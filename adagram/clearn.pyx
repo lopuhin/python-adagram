@@ -73,8 +73,16 @@ def inplace_train(
     cdef float lr;
     cdef int32_t window;
     cdef size_t c_len;
+    cdef size_t doc_len = len(doc)
+    cdef size_t i, k, j;
+    cdef double vm_alpha = vm.alpha
+    cdef double vm_d = vm.d
+    cdef int vm_prototypes = vm.prototypes
+    cdef int vm_dim = vm.dim
+    cdef size_t path_length = vm.path.shape[1]
+    cdef size_t code_length = vm.code.shape[1]
 
-    for i in range(len(doc)):
+    for i in range(doc_len):
         w = doc[i]
 
         lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
@@ -84,25 +92,25 @@ def inplace_train(
 
         z[:] = counts[w, :]
         n_senses = init_z(
-            z_ptr, vm.prototypes, vm.alpha, vm.d,
+            z_ptr, vm_prototypes, vm_alpha, vm_d,
             min_sense_prob)
         senses += n_senses
         max_senses = max(max_senses, n_senses)
         c_len = 0
-        for j in range(max(0, i - window), min(len(doc), i + window + 1)):
+        for j in range(max(0, i - window), min(doc_len, i + window + 1)):
             if i != j:
                 context[c_len] = doc[j]
                 c_len += 1
         update_z(In_ptr, Out_ptr,
-                 vm.dim, vm.prototypes, z_ptr,
+                 vm_dim, vm_prototypes, z_ptr,
                  w, context_ptr, c_len,
-                 path_ptr, code_ptr, vm.path.shape[1])
+                 path_ptr, code_ptr, path_length)
 
         total_ll[0] += inplace_update(
             In_ptr, Out_ptr,
-            vm.dim, vm.prototypes, z_ptr,
+            vm_dim, vm_prototypes, z_ptr,
             w, context_ptr, c_len,
-            path_ptr, code_ptr, vm.code.shape[1],
+            path_ptr, code_ptr, code_length,
             in_grad_ptr, out_grad_ptr,
             lr, sense_threshold)
         total_ll[1] += len(context)

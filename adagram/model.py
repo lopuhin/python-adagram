@@ -25,7 +25,7 @@ class Dictionary(object):
     @classmethod
     def read(cls, filename, min_freq, encoding='utf8'):
         words_freqs = []
-        with codecs.open(filename, 'rt', encoding=encoding) as f:
+        with codecs.open(filename, 'r', encoding=encoding) as f:
             for n, line in enumerate(f, 1):
                 line = line.strip()
                 try:
