@@ -23,6 +23,7 @@ def main():
     arg('--context-cut', help='randomly reduce size of the context',
         action='store_true')
     arg('--epochs', help='number of epochs to train', type=int, default=1)
+    arg('--workers', help='number of workers (all cores by default)', type=int)
 
     args = parser.parse_args()
     np.random.seed(42)
@@ -41,6 +42,6 @@ def main():
     vm = VectorModel(dictionary=dictionary,
         dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
     vm.train(args.input, args.window,
-        context_cut=args.context_cut, epochs=args.epochs)
+        context_cut=args.context_cut, epochs=args.epochs, n_workers=args.workers)
     print(vm.InNorm[100])
     vm.save(args.output)

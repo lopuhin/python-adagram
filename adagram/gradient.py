@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function
 import codecs
 import logging
+import queue
+import threading
+import multiprocessing
 
 import numpy as np
 
@@ -8,18 +11,53 @@ from . import clearn
 
 
 def inplace_train(vm, train_filename, window_length,
-        batch_size=64000, start_lr=0.025, context_cut=False, epochs=1,
-        sense_threshold=1e-32, encoding='utf8'):
+                  batch_size=64000, start_lr=0.025, context_cut=False, epochs=1,
+                  sense_threshold=1e-32, encoding='utf8', n_workers=None):
     assert epochs == 1 # TODO - epochs
     total_words = float(vm.frequencies.sum())
     total_ll = np.zeros(2, dtype=np.float64)
     vm.counts[:,0] = vm.frequencies
-    for words_read, doc in _words_reader(
+
+    if n_workers is None:
+        n_workers = multiprocessing.cpu_count()
+    doc_queue = queue.Queue(maxsize=n_workers * 2)
+
+    # FIXME - this looks crazy convoluted for such a simple thing?
+    def worker(stop_queue):
+        should_block = True
+        while True:
+            try:
+                stop_queue.get_nowait()
+            except queue.Empty:
+                pass
+            else:
+                should_block = False
+            try:
+                words_read, doc = doc_queue.get(block=should_block, timeout=1)
+            except queue.Empty:
+                if should_block:
+                    continue
+                else:
+                    break
+            clearn.inplace_train(
+                vm, doc, window_length, start_lr, total_words, words_read,
+                total_ll,
+                context_cut=context_cut, sense_threshold=sense_threshold)
+
+    stop_queues = [queue.Queue() for _ in range(n_workers)]
+    worker_threads = [threading.Thread(target=worker, args=[q])
+                      for q in stop_queues]
+    for thread in worker_threads:
+        thread.start()
+    for item in _words_reader(
             vm.dictionary, train_filename, batch_size, encoding):
-        logging.info('{:>8.2%}'.format(words_read / total_words))
-        clearn.inplace_train(
-            vm, doc, window_length, start_lr, total_words, words_read, total_ll,
-            context_cut=context_cut, sense_threshold=sense_threshold)
+        w_read, _ = item
+        logging.info('{:>8.2%}'.format(w_read / total_words))
+        doc_queue.put(item)
+    for q in stop_queues:
+        q.put(None)
+    for thread in worker_threads:
+        thread.join()
 
 
 def _words_reader(dictionary, train_filename, batch_size, encoding):
