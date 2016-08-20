@@ -78,18 +78,22 @@ class VectorModel(object):
         self.counts = np.zeros((N, prototypes), np.float32)
         self.InNorm = None
 
-    def train(self, input, window, context_cut=False, epochs=1, n_workers=None):
+    def train(self, input, window, context_cut=False, epochs=1, n_workers=None,
+              sense_threshold=1e-10):
         """ Train model.
         :arg input: is a path to tokenized text corpus
         :arg window: is window (or half-context) size
         :arg context_cut: randomly reduce context size to speed up training
         :arg epochs: number of iterations across input
         :arg n_workers: number of workers (all cores by default)
+        :arg sense_threshold: minimal probability of a meaning to contribute
+        into gradients
         """
         # TODO - input should be a words iterator
         inplace_train(
             self, input, window,
-            context_cut=context_cut, epochs=epochs, n_workers=n_workers)
+            context_cut=context_cut, epochs=epochs, n_workers=n_workers,
+            sense_threshold=sense_threshold)
         self.normalize()
 
     def sense_neighbors(self, word, sense, max_neighbors=10, min_count=1):

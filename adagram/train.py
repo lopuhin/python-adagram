@@ -3,8 +3,6 @@ from __future__ import absolute_import, division, print_function
 import argparse
 import logging
 
-import numpy as np
-
 from .model import VectorModel, Dictionary
 
 
@@ -18,6 +16,9 @@ def main():
     arg('--min-freq', help='min. frequency of words', type=int, default=10)
     arg('--dim', help='dimensionality of representations', type=int, default=100)
     arg('--prototypes', help='max. number of word prototypes', type=int, default=5)
+    arg('--sense-threshold',
+        help='minimal probability of a meaning to contribute into gradients',
+        type=float, default=1e-10)
     arg('--alpha', help='prior probability of allocating a new prototype',
         type=float, default=0.1)
     arg('--context-cut', help='randomly reduce size of the context',
@@ -26,7 +27,6 @@ def main():
     arg('--workers', help='number of workers (all cores by default)', type=int)
 
     args = parser.parse_args()
-    np.random.seed(42)
 
     logging.basicConfig(
         format='[%(levelname)s] %(asctime)s %(message)s',
@@ -42,6 +42,6 @@ def main():
     vm = VectorModel(dictionary=dictionary,
         dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
     vm.train(args.input, args.window,
-        context_cut=args.context_cut, epochs=args.epochs, n_workers=args.workers)
-    print(vm.InNorm[100])
+             context_cut=args.context_cut, sense_threshold=args.sense_threshold,
+             epochs=args.epochs, n_workers=args.workers)
     vm.save(args.output)

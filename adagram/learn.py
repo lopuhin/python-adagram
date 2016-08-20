@@ -11,8 +11,9 @@ from . import clearn
 
 
 def inplace_train(vm, train_filename, window_length,
-                  batch_size=64000, start_lr=0.025, context_cut=False, epochs=1,
-                  sense_threshold=1e-32, encoding='utf8', n_workers=None):
+                  context_cut=False, epochs=1, sense_threshold=1e-10,
+                  batch_size=64000, start_lr=0.025,  encoding='utf8',
+                  n_workers=None):
     assert epochs == 1 # TODO - epochs
     total_words = float(vm.frequencies.sum())
     total_ll = np.zeros(2, dtype=np.float64)
