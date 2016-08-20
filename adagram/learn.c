@@ -15,12 +15,13 @@ float logsigmoid(float x) {
 #define in_offset(In, x, k, M, T) (In) + (x)*(M)*(T) + (k)*(M)
 
 
-float inplace_update(float* In, float* Out,
-    int M, int T, double* z,
-    int32_t x, int32_t* context, int context_length,
-    int32_t* paths, int8_t* codes, int64_t length,
-    float* in_grad, float* out_grad,
-    float lr, float sense_threshold) {
+float inplace_update(
+        float* In, float* Out,
+        int M, int T, double* z,
+        int32_t x, int32_t* context, int context_length,
+        int32_t* paths, int8_t* codes, int64_t length,
+        float* in_grad, float* out_grad,
+        float lr, float sense_threshold) {
 
     float pr = 0;
     int32_t y;
@@ -77,10 +78,11 @@ float inplace_update(float* In, float* Out,
 }
 
 
-void update_z(float* In, float* Out,
-    int M, int T, double* z,
-    int32_t x, int32_t* context, int64_t context_length,
-    int32_t* paths, int8_t* codes, int64_t length) {
+void update_z(
+        float* In, float* Out,
+        int M, int T, double* z,
+        int32_t x, int32_t* context, int64_t context_length,
+        int32_t* paths, int8_t* codes, int64_t length) {
 
     int32_t y;
     int8_t* code;
