@@ -74,7 +74,7 @@ def inplace_train(
         for i in range(doc_len):
             w = doc[i]
 
-            lr = max(start_lr * (1 - words_read / (total_words + 1)), min_lr)
+            lr = max(start_lr * (1 - float(words_read) / (total_words + 1)), min_lr)
             window = window_length
             if context_cut:
                 with gil:
@@ -118,7 +118,8 @@ def inplace_train(
                     t1 = time.time()
                     logging.info(
                         '{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'
-                        .format(words_read / total_words, total_ll[0] / total_ll[1],
+                        .format(float(words_read) / total_words,
+                                total_ll[0] / total_ll[1],
                                 lr, senses / i, max_senses,
                                 report_batch_size / 1000 / (t1 - t0)))
                     t0 = t1
