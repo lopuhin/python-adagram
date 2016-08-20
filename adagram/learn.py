@@ -1,9 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import codecs
-import logging
-import queue
-import threading
 import multiprocessing
+from multiprocessing.pool import ThreadPool
 
 import numpy as np
 
@@ -19,44 +17,18 @@ def inplace_train(vm, train_filename, window_length,
     total_ll = np.zeros(2, dtype=np.float64)
     vm.counts[:,0] = vm.frequencies
 
-    if n_workers is None:
-        n_workers = multiprocessing.cpu_count()
-    doc_queue = queue.Queue(maxsize=n_workers * 2)
+    def process_item(item):
+        words_read, doc = item
+        clearn.inplace_train(
+            vm, doc, window_length, start_lr, total_words, words_read,
+            total_ll,
+            context_cut=context_cut, sense_threshold=sense_threshold)
 
-    # FIXME - this looks crazy convoluted for such a simple thing?
-    def worker(stop_queue):
-        should_block = True
-        while True:
-            try:
-                stop_queue.get_nowait()
-            except queue.Empty:
-                pass
-            else:
-                should_block = False
-            try:
-                words_read, doc = doc_queue.get(block=should_block, timeout=1)
-            except queue.Empty:
-                if should_block:
-                    continue
-                else:
-                    break
-            clearn.inplace_train(
-                vm, doc, window_length, start_lr, total_words, words_read,
-                total_ll,
-                context_cut=context_cut, sense_threshold=sense_threshold)
-
-    stop_queues = [queue.Queue() for _ in range(n_workers)]
-    worker_threads = [threading.Thread(target=worker, args=[q])
-                      for q in stop_queues]
-    for thread in worker_threads:
-        thread.start()
-    for item in _words_reader(
-            vm.dictionary, train_filename, batch_size, encoding):
-        doc_queue.put(item)
-    for q in stop_queues:
-        q.put(None)
-    for thread in worker_threads:
-        thread.join()
+    with ThreadPool(processes=n_workers or multiprocessing.cpu_count()) as pool:
+        for _ in pool.imap_unordered(process_item, _words_reader(
+                vm.dictionary, train_filename, batch_size, encoding)):
+            # TODO - move speed and progress reporting here
+            pass
 
 
 def _words_reader(dictionary, train_filename, batch_size, encoding):
