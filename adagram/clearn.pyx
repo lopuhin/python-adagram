@@ -1,7 +1,4 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
-import time
-import logging
-
 import numpy as np
 cimport numpy as np
 from libc.stdint cimport int32_t, int8_t, int64_t
@@ -35,7 +32,6 @@ def inplace_train(
         np.ndarray[np.float64_t, ndim=1] total_ll,
         int32_t context_cut,
         float sense_threshold,
-        int64_t report_batch_size=10000,
         float min_sense_prob=1e-3):
 
     cdef np.ndarray[np.float32_t, ndim=3] In = vm.In
@@ -50,8 +46,6 @@ def inplace_train(
     cdef np.ndarray[np.float32_t, ndim=1] out_grad = np.zeros(vm.dim, dtype=np.float32)
     cdef np.ndarray[np.float64_t, ndim=1] z = np.zeros(vm.prototypes, dtype=np.float64)
     cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
-
-    t0 = time.time()
 
     cdef double senses = 0.
     cdef double max_senses = 0.
@@ -113,13 +107,4 @@ def inplace_train(
             for k in range(vm_prototypes):
                 counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
 
-            if i and i % report_batch_size == 0:
-                with gil:
-                    t1 = time.time()
-                    logging.info(
-                        '{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'
-                        .format(float(words_read) / total_words,
-                                total_ll[0] / total_ll[1],
-                                lr, senses / i, max_senses,
-                                report_batch_size / 1000 / (t1 - t0)))
-                    t0 = t1
+    return lr, senses, max_senses

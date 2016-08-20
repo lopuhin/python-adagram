@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 import codecs
+import logging
 import multiprocessing
 from multiprocessing.pool import ThreadPool
+import time
 
 import numpy as np
 
@@ -19,16 +21,30 @@ def inplace_train(vm, train_filename, window_length,
 
     def process_item(item):
         words_read, doc = item
-        clearn.inplace_train(
+        x = clearn.inplace_train(
             vm, doc, window_length, start_lr, total_words, words_read,
-            total_ll,
-            context_cut=context_cut, sense_threshold=sense_threshold)
+            total_ll, context_cut=context_cut, sense_threshold=sense_threshold)
+        return (len(doc),) + x
 
-    with ThreadPool(processes=n_workers or multiprocessing.cpu_count()) as pool:
-        for _ in pool.imap_unordered(process_item, _words_reader(
-                vm.dictionary, train_filename, batch_size, encoding)):
-            # TODO - move speed and progress reporting here
-            pass
+    n_workers = n_workers or multiprocessing.cpu_count()
+    with ThreadPool(processes=n_workers) as pool:
+        words_processed = wp_since_report = 0
+        t0 = time.time()
+        for i, (doc_len, lr, senses, max_senses) in enumerate(
+                pool.imap_unordered(process_item, _words_reader(
+                    vm.dictionary, train_filename, batch_size, encoding)), 1):
+            words_processed += doc_len
+            wp_since_report += doc_len
+            if i % n_workers == 0:
+                t1 = time.time()
+                logging.info(
+                    '{:.2%} {:.4f} {:.4f} {:.1f}/{:.1f} {:.2f} kwords/sec'
+                        .format(float(words_processed) / total_words,
+                                total_ll[0] / total_ll[1],
+                                lr, senses / doc_len, max_senses,
+                                wp_since_report / (t1 - t0) / 1000))
+                wp_since_report = 0
+                t0 = t1
 
 
 def _words_reader(dictionary, train_filename, batch_size, encoding):
