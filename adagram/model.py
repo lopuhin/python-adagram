@@ -29,7 +29,7 @@ class Dictionary(object):
             for n, line in enumerate(f, 1):
                 line = line.strip()
                 try:
-                    word, freq = line.split()
+                    word, freq = line.split(' ')
                     freq = int(freq)
                 except ValueError:
                     raise ValueError(
