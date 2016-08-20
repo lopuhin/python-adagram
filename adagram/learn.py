@@ -51,8 +51,6 @@ def inplace_train(vm, train_filename, window_length,
         thread.start()
     for item in _words_reader(
             vm.dictionary, train_filename, batch_size, encoding):
-        w_read, _ = item
-        logging.info('{:>8.2%}'.format(w_read / total_words))
         doc_queue.put(item)
     for q in stop_queues:
         q.put(None)

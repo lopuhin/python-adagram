@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 from numpy.linalg import norm
 
-from .gradient import inplace_train
+from .learn import inplace_train
 from .infer import nearest_neighbors
 from .softmax import build_huffman_tree, convert_huffman_tree
 from .stick_breaking import expected_pi
