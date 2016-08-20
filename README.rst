@@ -40,7 +40,7 @@ Get sense probabilities for some word::
     >>> vm.sense_probs('apple')
     [0.341832, 0.658164]
 
-Get sense neighbours::
+Get sense neighbors::
 
     >>> vm.sense_neighbors('apple', 0)
     [('almond', 0, 0.70396507),

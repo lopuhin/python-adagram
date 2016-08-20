@@ -92,15 +92,15 @@ class VectorModel(object):
             context_cut=context_cut, epochs=epochs, n_workers=n_workers)
         self.normalize()
 
-    def sense_neighbors(self, word, sense, max_neighbours=10, min_count=1):
-        """ Nearest neighbours of given sense of the word.
+    def sense_neighbors(self, word, sense, max_neighbors=10, min_count=1):
+        """ Nearest neighbors of given sense of the word.
         :arg word: word (a string)
         :arg sense: integer sense id (starting from 0)
-        :arg max_neighbours: max number of neighbours returned
-        :arg min_count: min count of returned neighbours
+        :arg max_neighbors: max number of neighbors returned
+        :arg min_count: min count of returned neighbors
         :return: A list of triples (word, sense, closeness)
         """
-        return nearest_neighbors(self, word, sense, max_neighbours, min_count)
+        return nearest_neighbors(self, word, sense, max_neighbors, min_count)
 
     def sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
