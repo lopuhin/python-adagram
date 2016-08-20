@@ -49,14 +49,12 @@ def inplace_train(
         np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1] out_grad = np.zeros(vm.dim, dtype=np.float32)
     cdef np.ndarray[np.float64_t, ndim=1] z = np.zeros(vm.prototypes, dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] z0 = np.zeros(vm.prototypes, dtype=np.float64)
     cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
 
     t0 = time.time()
 
     cdef double senses = 0.
     cdef double max_senses = 0.
-    cdef double n_senses
     cdef float min_lr = start_lr * 1e-4
     cdef float lr;
     cdef int32_t window;
@@ -84,7 +82,7 @@ def inplace_train(
                     window -= np.random.randint(1, window_length)
 
             for k in range(vm_prototypes):
-                z[k] = z0[k] = counts[w, k]
+                z[k] = counts[w, k]
             n_senses = init_z(
                 &z[0], vm_prototypes, vm_alpha, vm_d,
                 min_sense_prob)
@@ -113,7 +111,7 @@ def inplace_train(
             # variational update for q(pi_v)
             frequencies_w = frequencies[w]
             for k in range(vm_prototypes):
-                counts[w, k] += lr * (z[k] * frequencies_w - z0[k])
+                counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
 
             if i and i % report_batch_size == 0:
                 with gil:
