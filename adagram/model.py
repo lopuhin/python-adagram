@@ -9,7 +9,6 @@ import numpy as np
 from numpy.linalg import norm
 
 from .learn import inplace_train
-from .infer import nearest_neighbors
 from .softmax import build_huffman_tree, convert_huffman_tree
 from .stick_breaking import expected_pi
 from .utils import rand_arr
@@ -104,7 +103,19 @@ class VectorModel(object):
         :arg min_count: min count of returned neighbors
         :return: A list of triples (word, sense, closeness)
         """
-        return nearest_neighbors(self, word, sense, max_neighbors, min_count)
+        word_id = self.dictionary.word2id[word]
+        s_v = self.InNorm[word_id, sense]
+        sim_matrix = np.dot(self.InNorm, s_v)
+        most_similar = []
+        while len(most_similar) < max_neighbors:
+            idx = sim_matrix.argmax()
+            w_id, s = idx // self.prototypes, idx % self.prototypes
+            sim = sim_matrix[w_id, s]
+            sim_matrix[w_id, s] = -np.inf
+            if ((w_id, s) != (word_id, sense) and
+                    self.counts[w_id, s] >= min_count):
+                most_similar.append((self.dictionary.id2word[w_id], s, sim))
+        return most_similar
 
     def sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
