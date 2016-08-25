@@ -7,7 +7,8 @@ It borrows a lot of C code from the original AdaGram implementation in Julia
 Sergey Bartunov, Dmitry Kondrashkin, Anton Osokin and Dmitry Vetrov
 at http://arxiv.org/abs/1502.07257.
 
-**Note**: this is a work in progress: it lacks tests and disambiguation.
+**Note**: this is a work in progress: it lacks tests and disambiguation,
+and produces incorrect results when using more than one worker.
 If you have a more mature implementation or want to help,
 please get in touch.
 

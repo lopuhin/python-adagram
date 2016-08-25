@@ -24,7 +24,8 @@ def main():
     arg('--context-cut', help='randomly reduce size of the context',
         action='store_true')
     arg('--epochs', help='number of epochs to train', type=int, default=1)
-    arg('--workers', help='number of workers (all cores by default)', type=int)
+    arg('--workers', help='number of workers (one by default)',
+        type=int, default=1)
 
     args = parser.parse_args()
 
