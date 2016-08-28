@@ -4,7 +4,11 @@ import heapq
 
 
 class HierarchicalSoftmaxNode(object):
+    num_nodes = 0
+
     def __init__(self, parent=-1, branch=False):
+        HierarchicalSoftmaxNode.num_nodes += 1
+        self.num = HierarchicalSoftmaxNode.num_nodes
         self.parent = parent
         self.branch = branch
 
@@ -16,7 +20,7 @@ class HierarchicalSoftmaxNode(object):
             self.parent, self.branch)
 
     def __gt__(self, other):
-        return id(self) < id(other)
+        return self.num > other.num
 
 
 class HierarchicalOutput(object):
