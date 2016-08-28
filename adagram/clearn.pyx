@@ -1,6 +1,8 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
+from cython.view cimport array as cvarray
 import numpy as np
 cimport numpy as np
+from libc.math cimport log
 from libc.stdint cimport int32_t, int8_t, int64_t
 
 
@@ -18,8 +20,6 @@ cdef extern from 'learn.c':
         int M, int T, double* z,
         int32_t x, int32_t* context, int64_t context_length,
         int32_t* paths, int8_t* codes, int64_t length) nogil
-
-    double init_z(double* pi, int T, double alpha, double d, float min_prob) nogil
 
 
 def inplace_train(
@@ -48,6 +48,7 @@ def inplace_train(
     cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
 
     cdef double senses = 0.
+    cdef double n_senses
     cdef double max_senses = 0.
     cdef float min_lr = start_lr * 1e-4
     cdef float lr;
@@ -77,9 +78,7 @@ def inplace_train(
 
             for k in range(vm_prototypes):
                 z[k] = counts[w, k]
-            n_senses = init_z(
-                &z[0], vm_prototypes, vm_alpha, vm_d,
-                min_sense_prob)
+            n_senses = init_z(z, vm_prototypes, vm_alpha, vm_d, min_sense_prob)
             senses += n_senses
             max_senses = max(max_senses, n_senses)
             c_len = 0
@@ -108,3 +107,61 @@ def inplace_train(
                 counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
 
     return lr, senses, max_senses
+
+
+cdef double init_z(
+        np.float64_t[:,] pi,
+        int vm_prototypes,
+        double vm_alpha,
+        double vm_d,
+        float min_sense_prob) nogil:
+
+    cdef double r = 0.
+    cdef double x = 1.
+    cdef double a, b, pi_k
+    cdef double senses = 0.
+    cdef int k
+
+    cdef double ts = 0.
+    for k in range(vm_prototypes):
+        ts += pi[k]
+
+    for k in range(vm_prototypes - 1):
+        ts = max(ts - pi[k], 0.)
+        a = 1. + pi[k] - vm_d
+        b = vm_alpha + k * vm_d + ts
+        pi[k] = meanlog_beta(a, b) + r
+        r += meanlog_beta(b, a)
+
+        pi_k = mean_beta(a, b) * x
+        x = max(x - pi_k, 0.)
+        if pi_k >= min_sense_prob:
+            senses += 1.
+
+    pi[vm_prototypes - 1] = r
+    if x >= min_sense_prob:
+        senses += 1.
+
+    return senses
+
+
+cdef double mean_beta(double a, double b) nogil:
+    return a / (a + b)
+
+
+cdef double meanlog_beta(double a, double b) nogil:
+    return digamma(a) - digamma(a + b)
+
+
+cdef double digamma(double x) nogil:
+    cdef double result = 0., xx, xx2, xx4;
+    while x < 7.:
+        result -= 1. / x
+        x += 1.
+    x -= 1. / 2.
+    xx = 1. / x
+    xx2 = xx * xx
+    xx4 = xx2 * xx2
+    result += (log(x) + (1. / 24.) * xx2 - (7. / 960.) * xx4 +
+               (31. / 8064.) * xx4 * xx2 - (127. / 30720.) * xx4 * xx4)
+    return result
