@@ -78,7 +78,7 @@ class VectorModel(object):
         self.InNorm = None
 
     def train(self, input, window, context_cut=False, epochs=1, n_workers=None,
-              sense_threshold=1e-10):
+              sense_threshold=1e-10, normalize_inplace=True):
         """ Train model.
         :arg input: is a path to tokenized text corpus
         :arg window: is window (or half-context) size
@@ -87,13 +87,16 @@ class VectorModel(object):
         :arg n_workers: number of workers (all cores by default)
         :arg sense_threshold: minimal probability of a meaning to contribute
         into gradients
+        :arg normalize_inplace: set to True if you don't want to train the model
+        any more after finishing training (it takes less space).
         """
         # TODO - input should be a words iterator
+        assert self.In is not self.InNorm, 'training no longer possible'
         inplace_train(
             self, input, window,
             context_cut=context_cut, epochs=epochs, n_workers=n_workers,
             sense_threshold=sense_threshold)
-        self.normalize()
+        self.normalize(inplace=normalize_inplace)
 
     def sense_neighbors(self, word, sense, max_neighbors=10, min_count=1):
         """ Nearest neighbors of given sense of the word.
@@ -130,8 +133,9 @@ class VectorModel(object):
     def save(self, output):
         joblib.dump(self, output)
 
-    def normalize(self):
-        self.InNorm = np.zeros(self.In.shape, dtype=self.In.dtype)
+    def normalize(self, inplace=True):
+        self.InNorm = self.In if inplace else \
+            np.zeros(self.In.shape, dtype=self.In.dtype)
         for w_id in range(self.n_words):
             for s in range(self.prototypes):
                 v = self.In[w_id, s]
