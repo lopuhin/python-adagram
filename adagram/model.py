@@ -120,11 +120,15 @@ class VectorModel(object):
                 most_similar.append((self.dictionary.id2word[w_id], s, sim))
         return most_similar
 
-    def sense_probs(self, word, min_prob=1.e-3):
+    def word_sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
         """
         return [p for p in expected_pi(self, self.dictionary.word2id[word])
                 if p >= min_prob]
+
+    def sense_vector(self, word, sense):
+        word_id = self.dictionary.word2id[word]
+        return self.InNorm[word_id, sense]
 
     @classmethod
     def load(cls, input):

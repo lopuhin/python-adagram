@@ -38,7 +38,7 @@ Load model::
 
 Get sense probabilities for some word::
 
-    >>> vm.sense_probs('apple')
+    >>> vm.word_sense_probs('apple')
     [0.341832, 0.658164]
 
 Get sense neighbors::
@@ -66,4 +66,9 @@ Get sense neighbors::
      ('ibm', 0, 0.66797054),
      ('powerpc-based', 0, 0.66319686),
      ('ibm-compatible', 0, 0.66120595)]
+
+Get sense vector::
+
+    >>> vm.sense_vector('apple', 1)
+    array([...], dtype=float32)
 
