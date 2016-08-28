@@ -16,7 +16,8 @@ from .utils import rand_arr
 
 class Dictionary(object):
     def __init__(self, word_freqs):
-        words_freqs = sorted(word_freqs, key=lambda x: x[1], reverse=True)
+        words_freqs = sorted(
+            word_freqs, key=lambda x: (x[1], x[0]), reverse=True)
         self.frequencies = np.array([f for _, f in words_freqs], dtype=np.int64)
         self.id2word = [w for w, _ in words_freqs]
         self.word2id = {w: id_ for id_, w in enumerate(self.id2word)}

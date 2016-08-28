@@ -40,8 +40,8 @@ def main():
         dictionary = Dictionary.build(args.input, min_freq=args.min_freq)
     logging.info('Done! {} words.'.format(len(dictionary)))
 
-    vm = VectorModel(dictionary=dictionary,
-        dim=args.dim, prototypes=args.prototypes, alpha=args.alpha)
+    vm = VectorModel(dictionary=dictionary, dim=args.dim,
+                     prototypes=args.prototypes, alpha=args.alpha)
     vm.train(args.input, args.window,
              context_cut=args.context_cut, sense_threshold=args.sense_threshold,
              epochs=args.epochs, n_workers=args.workers)
