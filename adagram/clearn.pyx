@@ -45,6 +45,7 @@ def inplace_train(
         np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
     cdef np.ndarray[np.float32_t, ndim=1] out_grad = np.zeros(vm.dim, dtype=np.float32)
     cdef np.ndarray[np.float64_t, ndim=1] z = np.zeros(vm.prototypes, dtype=np.float64)
+    cdef np.float64_t[:] pi = z
     cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
 
     cdef double senses = 0.
@@ -77,8 +78,8 @@ def inplace_train(
                     window -= np.random.randint(1, window_length)
 
             for k in range(vm_prototypes):
-                z[k] = counts[w, k]
-            n_senses = init_z(z, vm_prototypes, vm_alpha, vm_d, min_sense_prob)
+                pi[k] = counts[w, k]
+            n_senses = init_z(pi, vm_prototypes, vm_alpha, vm_d, min_sense_prob)
             senses += n_senses
             max_senses = max(max_senses, n_senses)
             c_len = 0
@@ -87,13 +88,13 @@ def inplace_train(
                     context[c_len] = doc[j]
                     c_len += 1
             update_z(&In[0,0,0], &Out[0,0],
-                     vm_dim, vm_prototypes, &z[0],
+                     vm_dim, vm_prototypes, &pi[0],
                      w, &context[0], c_len,
                      &path[0,0], &code[0,0], path_length)
 
             total_ll[0] += inplace_update(
                 &In[0,0,0], &Out[0,0],
-                vm_dim, vm_prototypes, &z[0],
+                vm_dim, vm_prototypes, &pi[0],
                 w, &context[0], c_len,
                 &path[0,0], &code[0,0], code_length,
                 &in_grad[0,0], &out_grad[0],
