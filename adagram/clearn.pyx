@@ -1,5 +1,4 @@
 #cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
-from cython.view cimport array as cvarray
 import numpy as np
 cimport numpy as np
 from libc.math cimport log
@@ -24,46 +23,44 @@ cdef extern from 'learn.c':
 
 def inplace_train(
         vm,
-        np.ndarray[np.int32_t, ndim=1] doc,
+        np.int32_t[:] doc,
         int32_t window_length,
         float start_lr,
         int64_t total_words,
         int64_t words_read,
-        np.ndarray[np.float64_t, ndim=1] total_ll,
+        np.float64_t[:] total_ll,
         int32_t context_cut,
         float sense_threshold,
         float min_sense_prob=1e-3):
 
-    cdef np.ndarray[np.float32_t, ndim=3] In = vm.In
-    cdef np.ndarray[np.float32_t, ndim=2] Out = vm.Out
-    cdef np.ndarray[np.int32_t, ndim=2] path = vm.path
-    cdef np.ndarray[np.int8_t, ndim=2] code = vm.code
+    cdef np.float32_t[:, :, :] In = vm.In
+    cdef np.float32_t[:, :] Out = vm.Out
+    cdef np.int32_t[:, :] path = vm.path
+    cdef np.int8_t[:, :] code = vm.code
 
-    cdef np.ndarray[np.float32_t, ndim=2] counts = vm.counts
-    cdef np.ndarray[np.int64_t, ndim=1] frequencies = vm.frequencies
-    cdef np.ndarray[np.float32_t, ndim=2] in_grad = \
-        np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
-    cdef np.ndarray[np.float32_t, ndim=1] out_grad = np.zeros(vm.dim, dtype=np.float32)
-    cdef np.ndarray[np.float64_t, ndim=1] z = np.zeros(vm.prototypes, dtype=np.float64)
-    cdef np.float64_t[:] pi = z
-    cdef np.ndarray[np.int32_t, ndim=1] context = np.zeros(2 * window_length, dtype=np.int32)
+    cdef np.float32_t[:, :] counts = vm.counts
+    cdef np.int64_t[:] frequencies = vm.frequencies
+    cdef np.float32_t[:, :] in_grad = np.zeros((vm.prototypes, vm.dim), dtype=np.float32)
+    cdef np.float32_t[:] out_grad = np.zeros(vm.dim, dtype=np.float32)
+    cdef np.float64_t[:] pi = np.zeros(vm.prototypes, dtype=np.float64)
+    cdef np.int32_t[:] context = np.zeros(2 * window_length, dtype=np.int32)
 
     cdef double senses = 0.
     cdef double n_senses
     cdef double max_senses = 0.
     cdef float min_lr = start_lr * 1e-4
-    cdef float lr;
-    cdef int32_t window;
-    cdef size_t c_len;
-    cdef size_t doc_len = len(doc)
-    cdef size_t i, k, j;
+    cdef float lr
+    cdef int32_t window
+    cdef size_t c_len
+    cdef size_t doc_len = doc.shape[0]
+    cdef size_t i, k, j
     cdef double vm_alpha = vm.alpha
     cdef double vm_d = vm.d
     cdef int vm_prototypes = vm.prototypes
     cdef int vm_dim = vm.dim
     cdef size_t path_length = vm.path.shape[1]
     cdef size_t code_length = vm.code.shape[1]
-    cdef int32_t w;
+    cdef int32_t w
     cdef float frequencies_w
 
     with nogil:
@@ -79,7 +76,7 @@ def inplace_train(
 
             for k in range(vm_prototypes):
                 pi[k] = counts[w, k]
-            n_senses = init_z(pi, vm_prototypes, vm_alpha, vm_d, min_sense_prob)
+            n_senses = init_z(pi, vm_alpha, vm_d, min_sense_prob)
             senses += n_senses
             max_senses = max(max_senses, n_senses)
             c_len = 0
@@ -105,14 +102,13 @@ def inplace_train(
             # variational update for q(pi_v)
             frequencies_w = frequencies[w]
             for k in range(vm_prototypes):
-                counts[w, k] += lr * (z[k] * frequencies_w - counts[w, k])
+                counts[w, k] += lr * (pi[k] * frequencies_w - counts[w, k])
 
     return lr, senses, max_senses
 
 
 cdef double init_z(
-        np.float64_t[:,] pi,
-        int vm_prototypes,
+        np.float64_t[:] pi,
         double vm_alpha,
         double vm_d,
         float min_sense_prob) nogil:
@@ -122,6 +118,7 @@ cdef double init_z(
     cdef double a, b, pi_k
     cdef double senses = 0.
     cdef int k
+    cdef size_t vm_prototypes = pi.shape[0]
 
     cdef double ts = 0.
     for k in range(vm_prototypes):
