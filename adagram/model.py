@@ -15,9 +15,10 @@ from .utils import rand_arr
 
 
 class Dictionary(object):
-    def __init__(self, word_freqs):
-        words_freqs = sorted(
-            word_freqs, key=lambda x: (x[1], x[0]), reverse=True)
+    def __init__(self, words_freqs, preserve_indices=False):
+        if not preserve_indices:
+            words_freqs = sorted(
+                words_freqs, key=lambda x: (x[1], x[0]), reverse=True)
         self.frequencies = np.array([f for _, f in words_freqs], dtype=np.int64)
         self.id2word = [w for w, _ in words_freqs]
         self.word2id = {w: id_ for id_, w in enumerate(self.id2word)}
@@ -76,10 +77,9 @@ class VectorModel(object):
         self.In = rand_arr((N, prototypes, dim), 1. / dim, np.float32)
         self.Out = rand_arr((N, dim), 1. / dim, np.float32)
         self.counts = np.zeros((N, prototypes), np.float32)
-        self.InNorm = None
 
     def train(self, input, window, context_cut=False, epochs=1, n_workers=None,
-              sense_threshold=1e-10, normalize_inplace=True):
+              sense_threshold=1e-10):
         """ Train model.
         :arg input: is a path to tokenized text corpus
         :arg window: is window (or half-context) size
@@ -88,16 +88,13 @@ class VectorModel(object):
         :arg n_workers: number of workers (all cores by default)
         :arg sense_threshold: minimal probability of a meaning to contribute
         into gradients
-        :arg normalize_inplace: set to True if you don't want to train the model
-        any more after finishing training (it takes less space).
         """
         # TODO - input should be a words iterator
-        assert self.In is not self.InNorm, 'training no longer possible'
         inplace_train(
             self, input, window,
             context_cut=context_cut, epochs=epochs, n_workers=n_workers,
             sense_threshold=sense_threshold)
-        self.normalize(inplace=normalize_inplace)
+        self.normalize()
 
     def sense_neighbors(self, word, sense, max_neighbors=10, min_count=1):
         """ Nearest neighbors of given sense of the word.
@@ -108,8 +105,8 @@ class VectorModel(object):
         :return: A list of triples (word, sense, closeness)
         """
         word_id = self.dictionary.word2id[word]
-        s_v = self.InNorm[word_id, sense]
-        sim_matrix = np.dot(self.InNorm, s_v)
+        s_v = self.In[word_id, sense]
+        sim_matrix = np.dot(self.In, s_v)
         most_similar = []
         while len(most_similar) < max_neighbors:
             idx = sim_matrix.argmax()
@@ -129,7 +126,7 @@ class VectorModel(object):
 
     def sense_vector(self, word, sense):
         word_id = self.dictionary.word2id[word]
-        return self.InNorm[word_id, sense]
+        return self.In[word_id, sense]
 
     @classmethod
     def load(cls, input):
@@ -138,10 +135,9 @@ class VectorModel(object):
     def save(self, output):
         joblib.dump(self, output)
 
-    def normalize(self, inplace=True):
-        self.InNorm = self.In if inplace else \
-            np.zeros(self.In.shape, dtype=self.In.dtype)
+    def normalize(self):
         for w_id in range(self.n_words):
             for s in range(self.prototypes):
-                v = self.In[w_id, s]
-                self.InNorm[w_id, s] = v / norm(v)
+                v_norm = norm(self.In[w_id, s])
+                if not np.isclose(v_norm, 0):
+                    self.In[w_id, s] /= v_norm

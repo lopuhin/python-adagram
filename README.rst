@@ -87,3 +87,8 @@ Run the script that converts a julia model to JSON::
     $ julia adagram/dump_julia.jl julia-model out-directory
 
 This will save two JSON files to ``out-directory``.
+
+Next, to convert model to python format, run::
+
+    $ ./adagram/load_julia.py out-directory model.joblib
+
