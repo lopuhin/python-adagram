@@ -50,15 +50,20 @@ class Dictionary(object):
     def __len__(self):
         return len(self.id2word)
 
+    def slim_down(self, n):
+        self.frequencies = self.frequencies[:n]
+        self.id2word = self.id2word[:n]
+        self.word2id = {w: id_ for id_, w in enumerate(self.id2word)}
+
 
 class VectorModel(object):
     def __init__(self, dictionary, dim, prototypes, alpha):
-        self.alpha = alpha
+        self.alpha = alpha  # type: float
         self.d = 0.
-        self.dictionary = dictionary
+        self.dictionary = dictionary  # type: Dictionary
         self.frequencies = dictionary.frequencies
-        self.prototypes = prototypes
-        self.dim = dim
+        self.prototypes = prototypes  # type: int
+        self.dim = dim  # type: int
         self.n_words = N = len(self.frequencies)
 
         nodes = build_huffman_tree(self.frequencies)
@@ -141,3 +146,13 @@ class VectorModel(object):
                 v_norm = norm(self.In[w_id, s])
                 if not np.isclose(v_norm, 0):
                     self.In[w_id, s] /= v_norm
+
+    def slim_down(self, n):
+        """ Make model smaller: leave only first n words.
+        """
+        self.dictionary.slim_down(n)
+        self.n_words = n
+        self.path = self.path[:n]
+        self.code = self.code[:n]
+        self.In = self.In[:n]
+        self.counts = self.counts[:n]
