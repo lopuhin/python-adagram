@@ -155,4 +155,5 @@ class VectorModel(object):
         self.path = self.path[:n]
         self.code = self.code[:n]
         self.In = self.In[:n]
+        self.Out = self.Out[:n]
         self.counts = self.counts[:n]
