@@ -72,3 +72,18 @@ Get sense vector::
     >>> vm.sense_vector('apple', 1)
     array([...], dtype=float32)
 
+
+Converting models built with AdaGram.jl
+---------------------------------------
+
+First, install AdaGram.jl as described here https://github.com/sbos/AdaGram.jl.
+Install JSON package::
+
+    $ julia
+    julia> Pkg.add("JSON")
+
+Run the script that converts a julia model to JSON::
+
+    $ julia adagram/dump_julia.jl julia-model out-directory
+
+This will save two JSON files to ``out-directory``.
