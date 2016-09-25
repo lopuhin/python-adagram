@@ -9,6 +9,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from .learn import inplace_train
+from .clearn import inplace_update_z
 from .softmax import build_huffman_tree, convert_huffman_tree
 from .stick_breaking import expected_pi
 from .utils import rand_arr

@@ -5,7 +5,7 @@ import numpy as np
 
 
 def expected_pi(vm, w_idx):
-    pi = np.zeros(vm.prototypes)
+    pi = np.zeros(vm.prototypes, dtype=np.float64)
     r = 1.
     ts = vm.counts[w_idx, :].sum()
     for k in range(vm.prototypes - 1):

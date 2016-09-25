@@ -93,7 +93,7 @@ void update_z(
         code = codes + y * length;
 
         for (int n = 0; n < length && code[n] != -1; ++n) {
-            float* out = Out + path[n]*M;
+            float* out = Out + path[n] * M;
 
             for (int k = 0; k < T; ++k) {
                 float* in = in_offset(In, x, k, M, T);

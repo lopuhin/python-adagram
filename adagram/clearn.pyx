@@ -21,6 +21,17 @@ cdef extern from 'learn.c':
         int32_t* paths, int8_t* codes, int64_t length) nogil
 
 
+def inplace_update_z(vm, np.float64_t[:] z, int32_t w, np.int32_t[:] context):
+    cdef np.float32_t[:, :, :] In = vm.In
+    cdef np.float32_t[:, :] Out = vm.Out
+    cdef np.int32_t[:, :] path = vm.path
+    cdef np.int8_t[:, :] code = vm.code
+    update_z(&In[0,0,0], &Out[0,0],
+             vm.dim, vm.prototypes, &z[0],
+             w, &context[0], len(context),
+             &path[0,0], &code[0,0], vm.path.shape[1])
+
+
 def inplace_train(
         vm,
         np.int32_t[:] doc,
