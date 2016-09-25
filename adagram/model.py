@@ -123,6 +123,27 @@ class VectorModel(object):
                 most_similar.append((self.dictionary.id2word[w_id], s, sim))
         return most_similar
 
+    def sense_collocates(self, word, sense):
+        # FIXME: WIP, maybe this is not correct.
+        # The idea is to do "disambiguation" across the whole vocabulary,
+        # and find out which words are likely to indicate given sense.
+        # But this gives strange results.
+        in_vec = self.sense_vector(word, sense)
+        logsigmoid = lambda x: -np.log(1 + np.exp(-x))
+        z_values = np.zeros(self.n_words, dtype=np.float32)
+        out_dp = np.dot(self.Out, in_vec)
+        for w_id in range(self.n_words):
+            path = self.path[w_id]
+            code = self.code[w_id]
+            z = 0.
+            for n in range(path.shape[0]):
+                if code[n] == -1:
+                    break
+                f = out_dp[path[n]]
+                z += logsigmoid(f * (1. - 2. * code[n]))
+            z_values[w_id] = z
+        return z_values
+
     def word_sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
         """
