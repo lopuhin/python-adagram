@@ -115,7 +115,7 @@ class VectorModel(object):
         :return: A list of triples (word, sense, closeness)
         """
         word_id = self.dictionary.word2id[word]
-        s_v = self.In[word_id, sense]
+        s_v = self.In[word_id, sense] / self.InNorms[word_id, sense]
         sim_matrix = np.dot(self.In, s_v) / self.InNorms
         sim_matrix[np.isnan(sim_matrix)] = -np.inf
         most_similar = []
