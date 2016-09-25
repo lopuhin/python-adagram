@@ -106,12 +106,14 @@ class VectorModel(object):
             context_cut=context_cut, epochs=epochs, n_workers=n_workers,
             sense_threshold=sense_threshold)
 
-    def sense_neighbors(self, word, sense, max_neighbors=10, min_count=1):
+    def sense_neighbors(self, word, sense, max_neighbors=10,
+                        min_closeness=None, min_count=1):
         """ Nearest neighbors of given sense of the word.
         :arg word: word (a string)
         :arg sense: integer sense id (starting from 0)
         :arg max_neighbors: max number of neighbors returned
         :arg min_count: min count of returned neighbors
+        :arg min_closeness: min closeness of returned neighbors
         :return: A list of triples (word, sense, closeness)
         """
         word_id = self.dictionary.word2id[word]
@@ -119,15 +121,18 @@ class VectorModel(object):
         sim_matrix = np.dot(self.In, s_v) / self.InNorms
         sim_matrix[np.isnan(sim_matrix)] = -np.inf
         most_similar = []
-        # TODO - check if the loop below needs optimizing
-        while len(most_similar) < max_neighbors:
+        while True:
             idx = sim_matrix.argmax()
             w_id, s = idx // self.prototypes, idx % self.prototypes
             sim = sim_matrix[w_id, s]
             sim_matrix[w_id, s] = -np.inf
             if ((w_id, s) != (word_id, sense) and
                     self.counts[w_id, s] >= min_count):
+                if min_closeness is not None and sim < min_closeness:
+                    break
                 most_similar.append((self.dictionary.id2word[w_id], s, sim))
+            if max_neighbors is not None and len(most_similar) >= max_neighbors:
+                break
         return most_similar
 
     def sense_collocates(self, word, sense):
@@ -151,15 +156,35 @@ class VectorModel(object):
             z_values[w_id] = z
         return z_values
 
+    def disambiguate(self, word, context, min_prob=1e-3, use_prior=True):
+        word_idx = self.dictionary.word2id[word]
+        if use_prior:
+            z = expected_pi(self, word_idx)
+            z[z < min_prob] = 0
+            z = np.log(z)
+        else:
+            z = np.zeros(self.prototypes, dtype=np.float64)
+        inplace_update_z(
+            self, z, word_idx,
+            context=np.array(
+                [self.dictionary.word2id[w] for w in context],
+                dtype=np.int32))
+        return z
+
     def word_sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
         """
         return [p for p in expected_pi(self, self.dictionary.word2id[word])
                 if p >= min_prob]
 
-    def sense_vector(self, word, sense):
+    def sense_vector(self, word, sense, normalized=False):
         word_id = self.dictionary.word2id[word]
-        return self.In[word_id, sense]
+        v = self.In[word_id, sense]
+        if normalized:
+            nv = self.InNorms[word_id, sense]
+            if not np.isclose(nv, 0):
+                v = v / nv
+        return v
 
     @classmethod
     def load(cls, input):
