@@ -27,6 +27,7 @@ def main():
     model.Out[:] = vm_data['Out']
     model.In[:] = vm_data['In']
     model.path[:] = vm_data['path']
+    model.path -= 1
     model.code[:] = vm_data['code']
     model.save(args.out_file)
 
