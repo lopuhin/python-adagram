@@ -1,4 +1,4 @@
-#cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
+#cython: boundcheck=False, wraparound=False, nonecheck=False, cdivision=True
 import numpy as np
 cimport numpy as np
 from libc.math cimport log
@@ -20,6 +20,8 @@ cdef extern from 'learn.c':
         int32_t x, int32_t* context, int64_t context_length,
         int32_t* paths, int8_t* codes, int64_t length) nogil
 
+    float logsigmoid(float x) nogil
+
 
 def inplace_update_z(vm, np.float64_t[:] z, int32_t w, np.int32_t[:] context):
     cdef np.float32_t[:, :, :] In = vm.In
@@ -30,6 +32,32 @@ def inplace_update_z(vm, np.float64_t[:] z, int32_t w, np.int32_t[:] context):
              vm.dim, vm.prototypes, &z[0],
              w, &context[0], len(context),
              &path[0,0], &code[0,0], vm.path.shape[1])
+
+
+def inplace_update_collocates(
+        np.int32_t[:, :] path,
+        np.int8_t[:, :] code,
+        np.float32_t[:] out_dp,
+        np.float32_t[:] z_values):
+    cdef size_t path_len = path.shape[1]
+    cdef size_t n_words = z_values.shape[0]
+    cdef np.float32_t f, z
+    cdef size_t w_id, n
+    cdef int8_t c
+    cdef np.int32_t[:] _path
+    cdef np.int8_t[:] _code
+    with nogil:
+        for w_id in range(n_words):
+            z = 0.
+            _path = path[w_id]
+            _code = code[w_id]
+            for n in range(path_len):
+                c = _code[n]
+                if c == -1:
+                    break
+                f = out_dp[_path[n]]
+                z += logsigmoid(f * (1. - 2. * c))
+            z_values[w_id] = z
 
 
 def inplace_train(

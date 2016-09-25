@@ -9,7 +9,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from .learn import inplace_train
-from .clearn import inplace_update_z
+from .clearn import inplace_update_z, inplace_update_collocates
 from .softmax import build_huffman_tree, convert_huffman_tree
 from .stick_breaking import expected_pi
 from .utils import rand_arr
@@ -136,28 +136,28 @@ class VectorModel(object):
                 break
         return most_similar
 
-    def sense_collocates(self, word, sense):
-        # FIXME: WIP, maybe this is not correct.
-        # The idea is to do "disambiguation" across the whole vocabulary,
-        # and find out which words are likely to indicate given sense.
-        # But this gives strange results.
-        in_vec = self.sense_vector(word, sense)
-        logsigmoid = lambda x: -np.log(1 + np.exp(-x))
-        z_values = np.zeros(self.n_words, dtype=np.float32)
-        out_dp = np.dot(self.Out, in_vec)
-        for w_id in range(self.n_words):
-            path = self.path[w_id]
-            code = self.code[w_id]
-            z = 0.
-            for n in range(path.shape[0]):
-                if code[n] == -1:
-                    break
-                f = out_dp[path[n]]
-                z += logsigmoid(f * (1. - 2. * code[n]))
-            z_values[w_id] = z
-        return z_values
+    def word_sense_collocates(self, word, limit=10, min_prob=1e-3):
+        all_z_values = [
+            (sense, self.inverse_disambiguate(word, sense))
+            for sense, prob in zip(
+                range(self.prototypes), self.word_sense_probs(word))
+            if prob >= min_prob]
+        if len(all_z_values) < 2:
+            # It's possible to invent something for len = 1
+            return []
+        z_values_sum = np.zeros_like(all_z_values[0][1])
+        for _, z_values in all_z_values:
+            z_values_sum += z_values
+        z_values_sum /= len(all_z_values)
+        return [
+            (sense,
+             [self.dictionary.id2word[w_id]
+              for w_id in (z_values / z_values_sum).argsort()[:limit]])
+            for sense, z_values in all_z_values]
 
     def disambiguate(self, word, context, min_prob=1e-3, use_prior=True):
+        """ Return an array of probabilities for each sense of word in context.
+        """
         word_idx = self.dictionary.word2id[word]
         if use_prior:
             z = expected_pi(self, word_idx)
@@ -171,6 +171,15 @@ class VectorModel(object):
                 [self.dictionary.word2id[w] for w in context],
                 dtype=np.int32))
         return z
+
+    def inverse_disambiguate(self, word, sense):
+        """ Run "inverse" disambiguation over the whole vocabulary.
+        """
+        in_vec = self.sense_vector(word, sense)
+        z_values = np.zeros(self.n_words, dtype=np.float32)
+        out_dp = np.dot(self.Out, in_vec)
+        inplace_update_collocates(self.path, self.code, out_dp, z_values)
+        return z_values
 
     def word_sense_probs(self, word, min_prob=1.e-3):
         """ A list of sense probabilities for given word.
