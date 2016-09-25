@@ -80,9 +80,14 @@ class VectorModel(object):
                 self.path[n, i] = p
 
         self.In = rand_arr((N, prototypes, dim), 1. / dim, np.float32)
-        self.InNorms = None
         self.Out = rand_arr((N, dim), 1. / dim, np.float32)
         self.counts = np.zeros((N, prototypes), np.float32)
+
+    @property
+    def InNorms(self):
+        if not hasattr(self, '_InNorms'):
+            self._InNorms = norm(self.In, axis=2)
+        return self._InNorms
 
     def train(self, input, window, context_cut=False, epochs=1, n_workers=None,
               sense_threshold=1e-10):
@@ -111,8 +116,6 @@ class VectorModel(object):
         """
         word_id = self.dictionary.word2id[word]
         s_v = self.In[word_id, sense]
-        if self.InNorms is None:
-            self.InNorms = norm(self.In, axis=2)
         sim_matrix = np.dot(self.In, s_v) / self.InNorms
         sim_matrix[np.isnan(sim_matrix)] = -np.inf
         most_similar = []
@@ -160,9 +163,7 @@ class VectorModel(object):
 
     @classmethod
     def load(cls, input):
-        vm = joblib.load(input)
-        vm.InNorms = None  # old format compatibility
-        return vm
+        return joblib.load(input)
 
     def save(self, output):
         joblib.dump(self, output)
@@ -172,6 +173,8 @@ class VectorModel(object):
         """
         self.dictionary.slim_down(n)
         self.n_words = n
+        # FIXME - Out, path and code are wrong after slim,
+        # could as well set them to None.
         self.path = self.path[:n]
         self.code = self.code[:n]
         self.In = self.In[:n]
