@@ -28,7 +28,6 @@ def main():
     model.In[:] = vm_data['In']
     model.path[:] = vm_data['path']
     model.code[:] = vm_data['code']
-    model.normalize()
     model.save(args.out_file)
 
 
