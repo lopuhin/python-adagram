@@ -1,4 +1,4 @@
-#cython: boundcheck=False, wraparound=False, nonecheck=False, cdivision=True
+#cython: boundscheck=False, wraparound=False, nonecheck=False, cdivision=True
 import numpy as np
 cimport numpy as np
 from libc.math cimport log
