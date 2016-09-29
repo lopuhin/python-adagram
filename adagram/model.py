@@ -146,8 +146,7 @@ class VectorModel(object):
     def word_sense_collocates(self, word, limit=10, min_prob=1e-3):
         all_z_values = [
             (sense, self.inverse_disambiguate(word, sense))
-            for sense, prob in zip(
-                range(self.prototypes), self.word_sense_probs(word))
+            for sense, prob in self.word_sense_probs(word)
             if prob >= min_prob and self.is_valid_sense_vector(word, sense)]
         if len(all_z_values) < 2:
             # It's possible to invent something for len = 1
@@ -188,11 +187,13 @@ class VectorModel(object):
         inplace_update_collocates(self.path, self.code, out_dp, z_values)
         return z_values
 
-    def word_sense_probs(self, word, min_prob=1.e-3):
-        """ A list of sense probabilities for given word.
+    def word_sense_probs(self, word, min_prob=1e-3):
+        """ A list of all indices and sense probabilities for given word.
         """
-        return [p for p in expected_pi(self, self.dictionary.word2id[word])
-                if p >= min_prob]
+        return [
+            (idx, p) for idx, p in enumerate(
+                expected_pi(self, self.dictionary.word2id[word]))
+            if p >= min_prob]
 
     def sense_vector(self, word, sense, normalized=False):
         word_id = self.dictionary.word2id[word]
