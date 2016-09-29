@@ -117,6 +117,8 @@ class VectorModel(object):
         :arg min_closeness: min closeness of returned neighbors
         :return: A list of triples (word, sense, closeness)
         """
+        if not self.is_valid_sense_vector(word, sense):
+            return []
         word_id = self.dictionary.word2id[word]
         s_v = self.In[word_id, sense] / self.InNorms[word_id, sense]
         sim_matrix = np.dot(self.In, s_v) / self.InNorms
@@ -136,12 +138,17 @@ class VectorModel(object):
                 break
         return most_similar
 
+    def is_valid_sense_vector(self, word, sense):
+        word_id = self.dictionary.word2id[word]
+        s_v, s_v_norm = self.In[word_id, sense], self.InNorms[word_id, sense]
+        return not (np.allclose(s_v, 0) or np.allclose(s_v_norm, 0))
+
     def word_sense_collocates(self, word, limit=10, min_prob=1e-3):
         all_z_values = [
             (sense, self.inverse_disambiguate(word, sense))
             for sense, prob in zip(
                 range(self.prototypes), self.word_sense_probs(word))
-            if prob >= min_prob]
+            if prob >= min_prob and self.is_valid_sense_vector(word, sense)]
         if len(all_z_values) < 2:
             # It's possible to invent something for len = 1
             return []
