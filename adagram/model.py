@@ -216,10 +216,6 @@ class VectorModel(object):
         """
         self.dictionary.slim_down(n)
         self.n_words = n
-        # FIXME - Out, path and code are wrong after slim,
-        # could as well set them to None.
-        self.path = self.path[:n]
-        self.code = self.code[:n]
         self.In = self.In[:n]
-        self.Out = self.Out[:n]
+        # Out, path and code can't be slimmed down so easily, leave them as-is.
         self.counts = self.counts[:n]
