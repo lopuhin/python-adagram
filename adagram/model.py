@@ -174,7 +174,8 @@ class VectorModel(object):
         inplace_update_z(
             self, z, word_idx,
             context=np.array(
-                [self.dictionary.word2id[w] for w in context],
+                [self.dictionary.word2id[w] for w in context
+                 if w in self.dictionary.word2id],
                 dtype=np.int32))
         return z
 
