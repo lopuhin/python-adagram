@@ -218,5 +218,7 @@ class VectorModel(object):
         self.dictionary.slim_down(n)
         self.n_words = n
         self.In = self.In[:n]
+        if hasattr(self, '_InNorms'):
+            self._InNorms = self._InNorms[:n]
         # Out, path and code can't be slimmed down so easily, leave them as-is.
         self.counts = self.counts[:n]
