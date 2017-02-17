@@ -23,7 +23,8 @@ setup(name='adagram',
               'adagram/*', ['adagram/*.pyx'],
               include_dirs=[np.get_include()],
               extra_compile_args=[
-                  '-march=native', '-O3', '-ffast-math', '-std=c99']
+                  '-march=native', '-O3', '-ffast-math', '-std=c99'],
+              extra_link_args=['-lm'],
           ),
           ]),
       entry_points={
