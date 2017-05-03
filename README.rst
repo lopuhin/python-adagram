@@ -15,9 +15,10 @@ please get in touch.
 Install
 -------
 
-::
+The package is not on PyPI yet, please install it from source in the meantime::
 
-    $ pip install python-adagram
+    $ pip install Cython numpy
+    $ pip install git+https://github.com/lopuhin/python-adagram.git
 
 
 Usage
